@@ -1,50 +1,78 @@
-# Welcome to your Expo app 👋
+# Axon - Frontend Móvil 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Proyecto desarrollado por Victor Fonseca y Ranzes Mata**
 
-## Get started
+Frontend móvil del Trabajo de Fin de Grado (TFG) 🎓 para la plataforma colaborativa Axon.
 
-1. Install dependencies
+Este repositorio contiene el frontend de la aplicación móvil Axon, desarrollado inicialmente para Android. Se centra en proporcionar una interfaz de usuario intuitiva para interactuar con el backend de Axon.
 
-   ```bash
-   npm install
-   ```
+## Estado Actual ✅
 
-2. Start the app
+Actualmente, el enfoque principal ha sido el desarrollo de la pantalla de inicio de sesión, que incluye:
 
-   ```bash
-   npx expo start
-   ```
+*   Adaptación a temas claro y oscuro.
+*   Manejo de enfoque en los campos de entrada (email y contraseña).
+*   Botón para alternar la visibilidad de la contraseña.
+*   Botón "¿Has olvidado tu contraseña?".
+*   Botón de inicio de sesión.
+*   Separador "O".
+*   Botón "Continuar con Google" con el logo oficial (implementado con SVG).
+*   Botón "Unirse a reunión con ID" con icono de calendario.
+*   Posicionamiento del texto "¿No tienes una cuenta? Regístrate ahora" en la parte inferior de la pantalla, respetando el área segura.
+*   Uso centralizado de colores definidos en `constants/Colors.ts`.
 
-In the output, you'll find options to open the app in a
+## Tecnologías Principales 🛠️
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+*   React Native
+*   Expo
+*   Expo Router (para navegación)
+*   TypeScript
+*   react-native-svg (para logos SVG)
+*   react-native-safe-area-context (para manejar áreas seguras)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Estructura de Carpetas 🗂️
 
-## Get a fresh project
+La estructura sigue el patrón de Expo Router, con las principales secciones en `app/`.
 
-When you're ready, run:
+*   `app/`: Contiene las pantallas y layouts de la aplicación (`login.tsx`, `_layout.tsx`).
+*   `assets/`: Incluye imágenes (`logo.png`, `google_logo.svg`) y fuentes.
+*   `constants/`: Define constantes como los colores (`Colors.ts`).
+*   `hooks/`: Contiene hooks personalizados (`useColorScheme.ts`).
 
-```bash
-npm run reset-project
-```
+## En Desarrollo 🚧
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+*   Integración completa con el backend (registro, inicio de sesión, etc.).
+*   Implementación de las funcionalidades de gestión de proyectos, tareas, chat y videollamadas.
+*   Desarrollo de pantallas adicionales.
+*   Mejoras en la interfaz de usuario y experiencia del usuario.
 
-## Learn more
+## Requisitos para Ejecutar 🧪
 
-To learn more about developing your project with Expo, look at the following resources:
+*   Node.js (versión compatible con Expo)
+*   Expo Go app en un dispositivo Android o emulador.
+*   Acceso al backend de Axon en ejecución.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Instalación ⚙️
 
-## Join the community
+1.  Clona este repositorio.
+2.  Navega al directorio del proyecto en tu terminal.
+3.  Instala las dependencias:
 
-Join our community of developers creating universal apps.
+    ```bash
+    npm install
+    ```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+4.  Inicia la aplicación (asegúrate de que tu dispositivo/emulador Android esté conectado):
+
+    ```bash
+    npx expo start
+    ```
+
+5.  Escanea el código QR con la aplicación Expo Go en tu dispositivo Android.
+
+## Notas Adicionales 📌
+
+*   Actualmente centrado solo en Android.
+*   Se recomienda un reinicio limpio (`npx expo start -c`) después de instalar nuevas dependencias o realizar cambios significativos en la estructura de archivos.
+
+**Repositorio gestionado por ambos autores. 🤝**
