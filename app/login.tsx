@@ -7,6 +7,7 @@ import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWitho
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../constants/Colors';
+import { useRouter } from 'expo-router';
 
 const logo = require('@/assets/images/logo.png');
 
@@ -19,6 +20,7 @@ export default function LoginScreen() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -66,9 +68,11 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={{ width: '100%' }}>
-          <Text style={[styles.forgotPasswordText, { color: theme.orange, textAlign: 'right', fontWeight: 'bold', fontFamily: 'Inter-Bold' }]}>¿Has olvidado tu contraseña?</Text>
-        </TouchableOpacity>
+        <View style={{ width: '100%', alignItems: 'flex-end' }}>
+          <TouchableOpacity onPress={() => {}}>
+            <Text style={[styles.forgotPasswordText, { color: theme.orange, textAlign: 'right', fontWeight: 'bold', fontFamily: 'Inter-Bold' }]}>¿Has olvidado tu contraseña?</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={[styles.loginButton, { backgroundColor: theme.primary }]}>
           <Text style={[styles.loginButtonText, { fontFamily: 'Inter-Bold' }]}>Iniciar sesión</Text>
@@ -83,7 +87,7 @@ export default function LoginScreen() {
         {/* Continue with Google Button */}
         <TouchableOpacity style={[styles.googleButton, { borderColor: theme.orange }]}>
           <View style={styles.googleButtonContent}>
-            <Svg height="24" width="24" viewBox="0 0 24 24" style={{ marginRight: 10 }}>
+            <Svg height="20" width="20" viewBox="0 0 24 24" style={{ marginRight: 8 }}>
               <Path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <Path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <Path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -102,14 +106,16 @@ export default function LoginScreen() {
           </View>
         </TouchableOpacity>
 
-        <Text style={[{ color: theme.text, fontFamily: 'Inter-Regular', fontSize: 14, position: 'absolute', left: 0, right: 0, bottom: insets.bottom + 40, textAlign: 'center' }]}>
-          ¿No tienes una cuenta?{
-            ' '
-          }
-          <Text style={{ color: theme.orange, fontFamily: 'Inter-Bold' }}>
-            Registrate ahora
+        <View style={[{ flexDirection: 'row', justifyContent: 'center', width: '100%', marginTop: 90, alignItems: 'baseline' }]}>
+          <Text style={[{ color: theme.text, fontFamily: 'Inter-Regular', fontSize: 14 }]}>
+            ¿No tienes una cuenta?
           </Text>
-        </Text>
+          <TouchableOpacity onPress={() => router.replace('/register')} style={{ marginLeft: 4 }}>
+            <Text style={{ color: theme.orange, fontFamily: 'Inter-Bold', fontSize: 14 }}>
+              Registrate ahora
+            </Text>
+          </TouchableOpacity>
+        </View>
 
       </View>
     </TouchableWithoutFeedback>
@@ -122,10 +128,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
-    marginTop: -50,
+    marginTop: 0,
   },
   logoContainer: {
-    marginBottom: 40,
+    paddingTop: 10,
+    marginBottom: 30,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -139,7 +146,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   title: {
-    fontSize: 46,
+    fontSize: 40,
     fontWeight: "bold",
     marginBottom: 1,
     width: '100%',
@@ -209,11 +216,11 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     width: '100%',
-    padding: 15,
+    padding: 12,
     borderRadius: 5,
     borderWidth: 1,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
   googleButtonContent: {
     flexDirection: 'row',
@@ -226,12 +233,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   googleButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   joinButton: {
     width: '100%',
-    padding: 15,
+    padding: 12,
     borderRadius: 5,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -243,7 +250,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   joinButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
 }); 
