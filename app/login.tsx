@@ -1,7 +1,7 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Stack } from "expo-router";
+import { router, Stack } from "expo-router";
 import { useState } from "react";
 import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,7 +74,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.loginButton, { backgroundColor: theme.primary }]}>
+        <TouchableOpacity style={[styles.loginButton, { backgroundColor: theme.primary } ]} onPress={() => router.replace("/(tabs)") }>
           <Text style={[styles.loginButtonText, { fontFamily: 'Inter-Bold' }]}>Iniciar sesión</Text>
         </TouchableOpacity>
 
