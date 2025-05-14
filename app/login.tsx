@@ -40,14 +40,14 @@ export default function LoginScreen() {
         <Text style={[styles.subtitle, { color: theme.text, textAlign: 'left', fontFamily: 'Inter-Regular' }]}>Inicia sesión para continuar</Text>
 
         <TextInput
-          style={[styles.input, { backgroundColor: colorScheme === 'dark' ? theme.inputBackground : theme.card, color: theme.text, borderColor: emailFocused ? theme.orange : theme.gray }]}
+          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: emailFocused ? theme.orange : theme.gray }]}
           placeholder="Email"
           placeholderTextColor={theme.text + "80"}
           onFocus={() => setEmailFocused(true)}
           onBlur={() => setEmailFocused(false)}
         />
 
-        <View style={[styles.inputContainer, { borderColor: passwordFocused ? theme.orange : theme.gray, backgroundColor: colorScheme === 'dark' ? theme.inputBackground : theme.card }]}>
+        <View style={[styles.inputContainer, { borderColor: passwordFocused ? theme.orange : theme.gray, backgroundColor: theme.inputBackground }]}>
           <TextInput
             style={[styles.inputInsideContainer, { color: theme.text }]}
             placeholder="Contraseña"
@@ -74,7 +74,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.loginButton, { backgroundColor: theme.primary } ]} onPress={() => router.replace("/(tabs)") }>
+        <TouchableOpacity style={[styles.loginButton, { backgroundColor: theme.primary } ]} onPress={() => router.replace("/(tabs)/home") }>
           <Text style={[styles.loginButtonText, { fontFamily: 'Inter-Bold' }]}>Iniciar sesión</Text>
         </TouchableOpacity>
 

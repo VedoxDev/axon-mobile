@@ -31,6 +31,6 @@ export const Colors = {
     gray: 'gray',
     primary: '#007AFF',
     card: '#282828',
-    inputBackground: '#282828',
+    inputBackground: '#3A3A3A',
   },
 };
