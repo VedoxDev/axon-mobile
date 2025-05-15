@@ -1,98 +1,86 @@
-import React, { useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
-import { ExpandableCalendar, AgendaList, CalendarProvider, LocaleConfig } from 'react-native-calendars';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { CalendarList, LocaleConfig, CalendarProvider } from 'react-native-calendars';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 
+// 📅 Localización a español
 LocaleConfig.locales['es'] = {
   monthNames: [
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre',
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ],
   monthNamesShort: [
-    'Ene',
-    'Feb',
-    'Mar',
-    'Abr',
-    'May',
-    'Jun',
-    'Jul',
-    'Ago',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dic',
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
   ],
   dayNames: [
-    'Domingo',
-    'Lunes',
-    'Martes',
-    'Miércoles',
-    'Jueves',
-    'Viernes',
-    'Sábado',
+    'Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado',
   ],
   dayNamesShort: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
   today: 'Hoy',
 };
 LocaleConfig.defaultLocale = 'es';
 
-type EventItem = {
-  title: string;
-  data: { name: string; height?: number }[];
-};
+function generateMonthMarkedDates(selectedDate: string, theme: any): Record<string, any> {
+  const date = new Date(selectedDate);
+  const year = date.getFullYear();
+  const month = date.getMonth();
 
-// 🧪 Ejemplo de eventos por día
-const EVENTS: EventItem[] = [
-  {
-    title: '2025-05-14',
-    data: [{ name: 'Reunión de equipo' }, { name: 'Entrega informe' }]
-  },
-  {
-    title: '2025-05-15',
-    data: [{ name: 'Llamada cliente' }]
-  },
-];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const marked: Record<string, any> = {};
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    marked[dateStr] = {
+      disabled: false, // 👈 Forzamos que estén activos
+    };
+  }
+
+  // Marcar el seleccionado
+  marked[selectedDate] = {
+    selected: true,
+    selectedColor: theme.primary,
+    selectedTextColor: '#fff',
+    disabled: false,
+  };
+
+  return marked;
+}
+
 
 export default function CalendarScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
-  const renderItem = useCallback(({ item }: { item: { name: string } }) => (
-    <View style={[styles.eventItem, { backgroundColor: theme.card }]}>
-      <Text style={[styles.eventText, { color: theme.text }]}>{item.name}</Text>
-    </View>
-  ), [theme]);
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth(); // 0-indexed
+
+  function toDateString(date: Date): string {
+    return date.toISOString().split('T')[0];
+  }
+
+  const [selectedDate, setSelectedDate] = useState(toDateString(today));
+
+  const minDate = toDateString(new Date(currentYear, currentMonth - 2, 1));
+  // Calculate the last day of the month, two months in the future
+  const maxDate = toDateString(new Date(currentYear, currentMonth + 3, 0));
 
   return (
-    <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>Calendario</Text>
 
-      <CalendarProvider
-        date={EVENTS[0]?.title}
-        showTodayButton
-        theme={{
-          todayButtonTextColor: theme.tint
-        }}
-      >
-        <ExpandableCalendar
-          firstDay={1}
-          closeOnDayPress={false}
-          markedDates={{
-            '2025-05-14': { marked: true, dotColor: theme.primary },
-            '2025-05-15': { marked: true, dotColor: theme.primary }
-          }}
+      <CalendarProvider date={selectedDate}>
+        <CalendarList
+          current={selectedDate}
+          onDayPress={(day) => setSelectedDate(day.dateString)}
+          pastScrollRange={2}
+          futureScrollRange={2}
+          minDate={minDate}
+          maxDate={maxDate}
+          markedDates={generateMonthMarkedDates(selectedDate, theme)}
           theme={{
             calendarBackground: theme.background,
             textSectionTitleColor: theme.gray,
@@ -110,24 +98,14 @@ export default function CalendarScreen() {
             textDayHeaderFontSize: 12,
           }}
         />
-        <AgendaList
-          sections={EVENTS}
-          renderItem={renderItem}
-          sectionStyle={{
-            ...styles.sectionStyle,
-            backgroundColor: theme.background,
-          }}
-        />
       </CalendarProvider>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeAreaContainer: {
-    flex: 1,
-  },
   container: {
+    flex: 1,
   },
   title: {
     fontSize: 28,
@@ -135,33 +113,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'left',
     paddingLeft: 20,
-  },
-  calendar: {
-    borderWidth: 1,
-    borderColor: '#d3d3d3',
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  eventsContainer: {
-    flex: 1,
-    padding: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionStyle: {
-    padding: 10,
-    fontWeight: 'bold',
-    fontSize: 16
-  },
-  eventItem: {
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 8,
-    elevation: 1,
-  },
-  eventText: {
-    fontSize: 16,
+    paddingTop: 10,
   },
 });

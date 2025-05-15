@@ -28,6 +28,8 @@ const SIDEBAR_WIDTH = 70;
 const EXPANDED_WIDTH = 330;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+// ...imports stay the same
+
 export default function HomeLayout() {
   const pathname = usePathname();
   const colorScheme = useColorScheme();
@@ -35,8 +37,8 @@ export default function HomeLayout() {
   const insets = useSafeAreaInsets();
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showProjectDetailsCard, setShowProjectDetailsCard] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
-  // Animation
   const sidebarWidth = useSharedValue(SIDEBAR_WIDTH);
   const contentTranslate = useSharedValue(0);
   const mensajesTextOpacity = useSharedValue(0);
@@ -44,16 +46,20 @@ export default function HomeLayout() {
   const projectDetailsTranslateY = useSharedValue(500);
   const projectDetailsOpacity = useSharedValue(0);
 
-  // Animate on project select
-  if (selectedProject && sidebarWidth.value !== EXPANDED_WIDTH) {
-    sidebarWidth.value = withTiming(EXPANDED_WIDTH, { duration: 350 });
-    contentTranslate.value = withTiming(EXPANDED_WIDTH, { duration: 350 });
-  } else if (!selectedProject && sidebarWidth.value !== SIDEBAR_WIDTH) {
-    sidebarWidth.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
-    contentTranslate.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
-  }
+  useEffect(() => {
+    if (selectedProject) {
+      setIsAnimating(true);
+      sidebarWidth.value = withTiming(EXPANDED_WIDTH, { duration: 350 });
+      contentTranslate.value = withTiming(EXPANDED_WIDTH, { duration: 350 });
+      setTimeout(() => setIsAnimating(false), 350);
+    } else {
+      setIsAnimating(true);
+      sidebarWidth.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
+      contentTranslate.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
+      setTimeout(() => setIsAnimating(false), 350);
+    }
+  }, [selectedProject]);
 
-  // Animate Mensajes text opacity and Projects title opacity and Project Details card
   useEffect(() => {
     if (selectedProject) {
       setShowProjectDetailsCard(true);
@@ -92,12 +98,10 @@ export default function HomeLayout() {
     opacity: projectDetailsOpacity.value,
   }));
 
-  // Determine if sidebar should be shown based on the current route
   const showSidebar = !pathname.startsWith('/(tabs)/chat/');
 
   return (
     <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.background : theme.card, paddingTop: insets.top, overflow: 'hidden' }]}> 
-      {/* Sidebar */}
       {showSidebar && (
         <Animated.View 
           style={[
@@ -110,30 +114,26 @@ export default function HomeLayout() {
             sidebarAnimStyle,
           ]}
         >
-          {/* Project grid when expanded */}
           {selectedProject ? (
             <>
-              {/* Large Mensajes button at the top */}
               <TouchableOpacity style={styles.largeMensajesButton} onPress={() => setSelectedProject(null)}>
                 <Ionicons name="chatbubble" size={24} color={ colorScheme === 'dark' ? theme.text : theme.background } style={{ marginRight: 10 }} />
                 <Animated.View style={mensajeTextAnimStyle}>
                   <Text style={[styles.largeMensajesText, { color: colorScheme === 'dark' ? theme.text : theme.background }]}>Mensajes</Text>
                 </Animated.View>
               </TouchableOpacity>
-              {/* Text for Projects section */}
               <Animated.View style={[projectsTitleAnimStyle, { width: '100%', alignItems: 'flex-start' }]}>
                 <Text style={[styles.projectsTitle, { color: theme.text, textAlign: 'left', paddingLeft: 0 }]}>Tus proyectos</Text>
               </Animated.View>
-              <View style={styles.projectGrid}>
+              <View pointerEvents={isAnimating ? 'none' : 'auto'} style={styles.projectGrid}>
                 {PROJECTS.map((project) => (
-                   <AnimatedProjectButton
-                     key={project.id}
-                     project={project}
-                     selectedProject={selectedProject}
-                     setSelectedProject={setSelectedProject}
-                   />
+                  <AnimatedProjectButton
+                    key={project.id}
+                    project={project}
+                    selectedProject={selectedProject}
+                    setSelectedProject={setSelectedProject}
+                  />
                 ))}
-                {/* Add Project Button */}
                 <TouchableOpacity style={[styles.projectGridButton, styles.addProjectButton]}>
                   <Ionicons name="add" size={24} color={theme.text} />
                 </TouchableOpacity>
@@ -147,26 +147,28 @@ export default function HomeLayout() {
               >
                 <Ionicons name="chatbubble" size={24} color="#fff" />
               </TouchableOpacity>
-              {/* Separator only in collapsed view */}
               <View style={[styles.separator, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.text }]} />
-              {PROJECTS.map((project) => (
-                <TouchableOpacity key={project.id} style={[styles.sidebarButton, { backgroundColor: project.color }]} onPress={() => setSelectedProject(project)}>
-                  <Text style={styles.projectButtonText}>{project.name.charAt(0)}</Text>
-                </TouchableOpacity>
-              ))}
-              {/* Add Project Button */}
+              <View pointerEvents={isAnimating ? 'none' : 'auto'}>
+                {PROJECTS.map((project) => (
+                  <TouchableOpacity
+                    key={project.id}
+                    style={[styles.sidebarButton, { backgroundColor: project.color }]}
+                    onPress={() => setSelectedProject(project)}
+                  >
+                    <Text style={styles.projectButtonText}>{project.name.charAt(0)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TouchableOpacity style={[styles.sidebarButton, styles.addProjectButton]}>
                 <Ionicons name="add" size={24} color={theme.text} />
               </TouchableOpacity>
             </>
           )}
 
-          {/* Project details when expanded */}
           {showProjectDetailsCard && (
             <Animated.View style={[styles.projectDetailsCard, { backgroundColor: theme.inputBackground }, projectDetailsAnimStyle]}> 
               <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
               <Text style={{ color: theme.text, marginBottom: 10 }}>Rediseño Web de Axon</Text>
-              {/* Progress bar and avatars can be added here as needed */}
               <View style={styles.projectTabs}>
                 <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
                 <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
@@ -181,7 +183,6 @@ export default function HomeLayout() {
         </Animated.View>
       )}
 
-      {/* Main Content */}
       <Animated.View
         style={[
           styles.content,
@@ -189,12 +190,12 @@ export default function HomeLayout() {
           contentAnimStyle,
         ]}
       >
-        {/* Removed Slot for testing */}
         <Slot />
       </Animated.View>
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
