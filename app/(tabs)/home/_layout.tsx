@@ -170,13 +170,34 @@ export default function HomeLayout() {
               <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
               <Text style={{ color: theme.text, marginBottom: 10 }}>Rediseño Web de Axon</Text>
               <View style={styles.projectTabs}>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Calendario</Text>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Archivos</Text>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
-                <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>
+                <View style={styles.tabItem}>
+                  <Ionicons name="checkmark-circle" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
+                </View>
+                <View style={styles.tabItem}>
+                  <Ionicons name="chatbubble" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
+                </View>
+                <View style={styles.tabItem}>
+                  <Ionicons name="calendar" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Calendario</Text>
+                </View>
+                <View style={styles.tabItem}>
+                  <Ionicons name="pulse" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
+                </View>
+                <View style={styles.tabItem}>
+                  <Ionicons name="folder" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Archivos</Text>
+                </View>
+                <View style={styles.tabItem}>
+                  <Ionicons name="people" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
+                </View>
+                <View style={styles.tabItem}>
+                  <Ionicons name="megaphone" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>
+                </View>
               </View>
             </Animated.View>
           )}
@@ -290,13 +311,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 16,
-    gap: 12,
+    gap: 8,
+  },
+  tabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '50%',
+    marginBottom: 15,
+  },
+  tabIcon: {
+    marginRight: 8,
   },
   projectTab: {
     fontSize: 15,
     backgroundColor: 'transparent',
-    marginRight: 12,
-    marginBottom: 8,
   },
   content: {
     flex: 1,
