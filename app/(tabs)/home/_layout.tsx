@@ -75,7 +75,8 @@ export default function HomeLayout() {
   }));
   const contentAnimStyle = useAnimatedStyle(() => ({
     width: SCREEN_WIDTH,
-    transform: [{ translateX: sidebarWidth.value }],
+    transform: [{ translateX: sidebarWidth.value - SIDEBAR_WIDTH }],
+    marginLeft: SIDEBAR_WIDTH,
   }));
 
   const mensajeTextAnimStyle = useAnimatedStyle(() => ({
@@ -114,14 +115,14 @@ export default function HomeLayout() {
             <>
               {/* Large Mensajes button at the top */}
               <TouchableOpacity style={styles.largeMensajesButton} onPress={() => setSelectedProject(null)}>
-                <Ionicons name="chatbubble" size={24} color={theme.text} style={{ marginRight: 10 }} />
+                <Ionicons name="chatbubble" size={24} color={ colorScheme === 'dark' ? theme.text : theme.background } style={{ marginRight: 10 }} />
                 <Animated.View style={mensajeTextAnimStyle}>
-                  <Text style={[styles.largeMensajesText, { color: theme.text }]}>Mensajes</Text>
+                  <Text style={[styles.largeMensajesText, { color: colorScheme === 'dark' ? theme.text : theme.background }]}>Mensajes</Text>
                 </Animated.View>
               </TouchableOpacity>
               {/* Text for Projects section */}
               <Animated.View style={[projectsTitleAnimStyle, { width: '100%', alignItems: 'flex-start' }]}>
-                <Text style={[styles.projectsTitle, { color: theme.text, textAlign: 'left', paddingLeft: 15 }]}>Tus proyectos</Text>
+                <Text style={[styles.projectsTitle, { color: theme.text, textAlign: 'left', paddingLeft: 0 }]}>Tus proyectos</Text>
               </Animated.View>
               <View style={styles.projectGrid}>
                 {PROJECTS.map((project) => (
@@ -147,7 +148,7 @@ export default function HomeLayout() {
                 <Ionicons name="chatbubble" size={24} color="#fff" />
               </TouchableOpacity>
               {/* Separator only in collapsed view */}
-              <View style={styles.separator} />
+              <View style={[styles.separator, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.text }]} />
               {PROJECTS.map((project) => (
                 <TouchableOpacity key={project.id} style={[styles.sidebarButton, { backgroundColor: project.color }]} onPress={() => setSelectedProject(project)}>
                   <Text style={styles.projectButtonText}>{project.name.charAt(0)}</Text>
@@ -181,7 +182,6 @@ export default function HomeLayout() {
       )}
 
       {/* Main Content */}
-      {/* Main Content */}
       <Animated.View
         style={[
           styles.content,
@@ -189,6 +189,7 @@ export default function HomeLayout() {
           contentAnimStyle,
         ]}
       >
+        {/* Removed Slot for testing */}
         <Slot />
       </Animated.View>
     </View>
@@ -272,6 +273,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
+    marginBottom: 0,
+    borderBottomWidth: 0,
+    marginHorizontal: 10,
+    marginTop: 10,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   projectTitle: {
     fontSize: 20,

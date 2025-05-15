@@ -25,13 +25,13 @@ export default function MessagesScreen() {
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
   const renderChatItem = ({ item }: { item: ChatItem }) => (
-    <View style={[styles.chatItem, { borderBottomColor: theme.gray + '50' }]}>
+    <View style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}>
       <View style={[styles.avatarPlaceholder, { backgroundColor: theme.gray }]} />
       <View style={styles.chatDetails}>
         <Text style={[styles.chatName, { color: theme.text }]}>{item.name}</Text>
         <Text style={[styles.lastMessage, { color: theme.gray }]}>{item.lastMessage}</Text>
       </View>
-      <Text style={[styles.messageTime, { color: theme.gray }]}>{item.time}</Text>
+      <Text style={[styles.messageTime, { color: colorScheme === 'dark' ? theme.background : theme.card }]}>{item.time}</Text>
     </View>
   );
 
@@ -39,7 +39,7 @@ export default function MessagesScreen() {
     <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>Mensajes</Text>
 
-      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+      <View style={[styles.searchContainer, { backgroundColor: colorScheme === 'dark' ? theme.background : theme.card }]}>
         <TextInput
           style={[styles.searchInput, { color: theme.text }]}
           placeholder="Buscar chats..."
