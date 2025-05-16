@@ -8,6 +8,7 @@ import {
   NativeSyntheticEvent,
   useColorScheme,
   TouchableOpacity,
+  Platform
 } from 'react-native';
 import { Calendar, CalendarListRef, toDateId, CalendarTheme } from '@marceloterreiro/flash-calendar';
 import moment from 'moment';
@@ -15,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList } from '@shopify/flash-list';
 import { Colors } from '@/constants/Colors';
 import 'moment/locale/es';
+import { Ionicons } from '@expo/vector-icons';
 moment.locale('es');
 
 // 💡 Eventos aleatorios simulados
@@ -38,6 +40,10 @@ export default function CalendarWithEventList() {
   const [selectedDate, setSelectedDate] = useState(toDateId(new Date()));
   const [visibleMonth, setVisibleMonth] = useState(moment().format('MMMM YYYY'));
   
+  // State for the floating 'Hoy' button
+  const [showTodayButton, setShowTodayButton] = useState(false);
+  const [todayButtonDirection, setTodayButtonDirection] = useState<'up' | 'down' | null>(null);
+
   // Use refs instead of state for flags that need immediate updates
   const listSyncEnabledRef = useRef(false);
   const isProgrammaticScrollRef = useRef(true);
@@ -51,7 +57,7 @@ export default function CalendarWithEventList() {
   const lastViewableItemsRef = useRef<Array<{ item: { date: string }; isViewable: boolean; percentVisible?: number }>>([]);
 
   const screenHeight = Dimensions.get('window').height;
-  const calendarContainerHeight = screenHeight * 0.4;
+  const calendarContainerHeight = screenHeight * 0.34;
 
   const visibleDays = useMemo(() => {
     const today = moment().startOf('month');
@@ -80,12 +86,19 @@ export default function CalendarWithEventList() {
       initialRenderRef.current = false;
       const index = visibleDays.findIndex(day => day.date === selectedDate);
       if (index !== -1 && eventListRef.current) {
-        console.log('Initial scroll to index:', index);
-        eventListRef.current.scrollToIndex({ 
-          index, 
-          animated: false,
-          viewPosition: 0.5
-        });
+        console.log('Attempting initial scroll to index:', index);
+        // Add a small delay to allow FlashList to render
+        const timer = setTimeout(() => {
+          console.log('Executing initial scroll to index:', index);
+          eventListRef.current?.scrollToIndex({
+            index,
+            animated: false,
+            viewPosition: 0.5
+          });
+        }, 100); // Delay of 100ms, adjust if needed
+
+        // Cleanup the timer if the component unmounts before the timeout
+        return () => clearTimeout(timer);
       }
     }
   }, [selectedDate, visibleDays]);
@@ -147,6 +160,25 @@ export default function CalendarWithEventList() {
       setLastScrollPosition(null);
     }
   }, [lastScrollPosition]);
+
+  // Effect to control the visibility and direction of the 'Hoy' button
+  useEffect(() => {
+    const today = moment().format('YYYY-MM-DD');
+    const selectedMoment = moment(selectedDate);
+    const todayMoment = moment(today);
+
+    if (selectedMoment.isSame(today, 'day')) {
+      setShowTodayButton(false);
+      setTodayButtonDirection(null);
+    } else {
+      setShowTodayButton(true);
+      if (selectedMoment.isBefore(today, 'day')) {
+        setTodayButtonDirection('down');
+      } else {
+        setTodayButtonDirection('up');
+      }
+    }
+  }, [selectedDate]);
 
   const handleScrollBegin = useCallback(() => {
     console.log('List scroll began - enabling sync');
@@ -295,6 +327,39 @@ export default function CalendarWithEventList() {
     }
   }, [visibleDays, resetScrollState]);
 
+  // Handler to scroll back to today
+  const handlePressToday = useCallback(() => {
+    resetScrollState(); // Reset scroll state
+    listSyncEnabledRef.current = false; // Disable sync temporarily
+    isProgrammaticScrollRef.current = true; // Treat as programmatic scroll
+    isScrollingRef.current = true; // Indicate scrolling is happening
+
+    const today = moment().format('YYYY-MM-DD');
+    setSelectedDate(today);
+
+    // Scroll calendar to today
+    if (calendarRef.current) {
+      calendarRef.current.scrollToDate(moment(today).toDate(), true, { additionalOffset: -50 });
+    }
+
+    // Scroll list to today
+    const index = visibleDays.findIndex(day => day.date === today);
+    if (index !== -1 && eventListRef.current) {
+      eventListRef.current.scrollToIndex({
+        index,
+        animated: true,
+        viewPosition: 0.5,
+      });
+    }
+
+    // Re-enable sync and reset scrolling state after a short delay
+    setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+      isScrollingRef.current = false;
+      listSyncEnabledRef.current = true;
+    }, 800); // Increased delay to 800ms
+  }, [visibleDays, resetScrollState]);
+
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentSize, layoutMeasurement, contentOffset } = event.nativeEvent;
     const totalScrollableHeight = contentSize.height - layoutMeasurement.height;
@@ -307,7 +372,7 @@ export default function CalendarWithEventList() {
     setVisibleMonth(estimatedMonth.format('MMMM YYYY'));
   }, [months]);
 
-  const dynamicStyles = useMemo(() => StyleSheet.create({
+  const dynamicStyles = StyleSheet.create({
     eventListItem: {
       paddingVertical: 12,
       paddingHorizontal: 8,
@@ -345,13 +410,13 @@ export default function CalendarWithEventList() {
       zIndex: 1,
     },
     monthOverlayText: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: 'bold',
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderRadius: 5,
       color: colorSet.text,
-      backgroundColor: colorScheme === 'dark' ? 'rgba(21, 23, 24, 0.7)' : 'rgba(255,255,255,0.7)',
+      backgroundColor: `${colorSet.primary}B3`,
     },
     eventDateHeader: {
       fontSize: 14,
@@ -361,11 +426,33 @@ export default function CalendarWithEventList() {
       marginLeft: 8,
       color: '#555',
     },
-  }), [colorSet, colorScheme]);
+    todayButton: {
+      position: 'absolute',
+      bottom: 20,
+      left: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 15,
+      borderRadius: 25,
+      elevation: 5, // Shadow for Android
+      shadowColor: '#000', // Shadow for iOS
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      zIndex: 10,
+    },
+    todayButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginLeft: 5,
+    },
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colorSet.background }]}>
-      <Text style={[styles.title, { color: colorSet.text }]}>📅 Calendario + Lista</Text>
+      <Text style={[styles.title, { color: colorSet.text }]}>Calendario</Text>
 
       <View style={{ height: calendarContainerHeight }}>
         <Calendar.List
@@ -390,6 +477,15 @@ export default function CalendarWithEventList() {
           </Text>
         </View>
       </View>
+
+      {/* Separator */}
+      <View style={{
+        height: 2,
+        backgroundColor: colorSet.gray,
+        marginVertical: 10,
+        width: '75%',
+        alignSelf: 'center',
+      }} />
 
       <FlashList
         data={visibleDays}
@@ -441,6 +537,22 @@ export default function CalendarWithEventList() {
           );
         }}
       />
+
+      {/* Floating 'Hoy' Button */}
+      {showTodayButton && (
+        <TouchableOpacity
+          style={[dynamicStyles.todayButton, { backgroundColor: colorSet.primary }]}
+          onPress={handlePressToday}
+        >
+          {todayButtonDirection === 'up' && (
+            <Ionicons name="arrow-up" size={20} color="#fff" />
+          )}
+          {todayButtonDirection === 'down' && (
+            <Ionicons name="arrow-down" size={20} color="#fff" />
+          )}
+          <Text style={dynamicStyles.todayButtonText}>Hoy</Text>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -455,6 +567,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: 'left',
   },
 });
