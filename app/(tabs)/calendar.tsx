@@ -48,6 +48,7 @@ export default function CalendarWithEventList() {
 
   const calendarRef = useRef<CalendarListRef>(null);
   const eventListRef = useRef<FlashList<any>>(null);
+  const lastViewableItemsRef = useRef<Array<{ item: { date: string }; isViewable: boolean; percentVisible?: number }>>([]);
 
   const screenHeight = Dimensions.get('window').height;
   const calendarContainerHeight = screenHeight * 0.4;
@@ -109,16 +110,43 @@ export default function CalendarWithEventList() {
     };
   }, [resetScrollState]);
 
+  const [lastScrollPosition, setLastScrollPosition] = useState<{ date: string } | null>(null);
+
   const handleScrollEnd = useCallback(() => {
     if (scrollEndTimeoutRef.current) {
       clearTimeout(scrollEndTimeoutRef.current);
     }
+    
+    // Use the last known viewable items to determine final position
+    const viewableItems = lastViewableItemsRef.current;
+    if (viewableItems.length > 0) {
+      const mostVisible = viewableItems.reduce((prev, curr) => 
+        (curr.percentVisible || 0) > (prev.percentVisible || 0) ? curr : prev
+      );
+      if (mostVisible.item?.date) {
+        console.log('Final scroll position:', mostVisible.item.date);
+        setLastScrollPosition({ date: mostVisible.item.date });
+      }
+    }
+
     scrollEndTimeoutRef.current = setTimeout(() => {
-      console.log('Scroll state reset after timeout');
+      console.log('Scroll cleanup completed');
       isScrollingRef.current = false;
       listSyncEnabledRef.current = true;
     }, 50);
   }, []);
+
+  // Add effect to handle final position update
+  useEffect(() => {
+    if (lastScrollPosition && !isScrollingRef.current) {
+      console.log('Updating from final scroll position:', lastScrollPosition.date);
+      setSelectedDate(lastScrollPosition.date);
+      if (calendarRef.current) {
+        calendarRef.current.scrollToDate(moment(lastScrollPosition.date).toDate(), true, { additionalOffset: -50 });
+      }
+      setLastScrollPosition(null);
+    }
+  }, [lastScrollPosition]);
 
   const handleScrollBegin = useCallback(() => {
     console.log('List scroll began - enabling sync');
@@ -131,6 +159,9 @@ export default function CalendarWithEventList() {
   const handleEventListViewableItemsChanged = useCallback(({
     viewableItems,
   }: { viewableItems: Array<{ item: { date: string }; isViewable: boolean; percentVisible?: number }> }) => {
+    // Store the current viewable items
+    lastViewableItemsRef.current = viewableItems;
+
     console.log('ViewableItemsChanged called', {
       listSyncEnabled: listSyncEnabledRef.current,
       isProgrammaticScroll: isProgrammaticScrollRef.current,
