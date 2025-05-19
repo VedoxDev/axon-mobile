@@ -1,5 +1,5 @@
 import { View, StyleSheet, TouchableOpacity, Text, Dimensions } from 'react-native';
-import { Slot, Tabs, usePathname } from 'expo-router';
+import { Slot, Tabs, usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
@@ -32,6 +32,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function HomeLayout() {
   const pathname = usePathname();
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const insets = useSafeAreaInsets();
@@ -170,10 +171,13 @@ export default function HomeLayout() {
               <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
               <Text style={{ color: theme.text, marginBottom: 10 }}>Rediseño Web de Axon</Text>
               <View style={styles.projectTabs}>
-                <View style={styles.tabItem}>
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/Task')}
+                >
                   <Ionicons name="checkmark-circle" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.tabItem}>
                   <Ionicons name="chatbubble" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
