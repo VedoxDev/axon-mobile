@@ -3,6 +3,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function UserScreen() {
   const colorScheme = useColorScheme();
@@ -20,6 +21,7 @@ export default function UserScreen() {
 
   return (
     <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: theme.background }]}>
+      <ScrollView>
       {/* Profile Header */}
       <View style={styles.profileHeader}> 
         <Image
@@ -94,7 +96,7 @@ export default function UserScreen() {
             <Text style={[styles.infoValue, { color: theme.text }]}>Febrero 2024</Text>
          </View>
        </View>
-
+       </ScrollView>
     </SafeAreaView>
   );
 }

@@ -185,11 +185,14 @@ export default function HomeLayout() {
                 <View style={styles.tabItem}>
                   <Ionicons name="calendar" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Calendario</Text>
-                </View>
-                <View style={styles.tabItem}>
+                </View>      
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/Activity/activityScreen')}
+                >
                   <Ionicons name="pulse" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.tabItem}>
                   <Ionicons name="folder" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Archivos</Text>
@@ -198,10 +201,13 @@ export default function HomeLayout() {
                   <Ionicons name="people" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
                 </View>
-                <View style={styles.tabItem}>
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/Announcements/annScreen')}
+                >
                   <Ionicons name="megaphone" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>
-                </View>
+                  </TouchableOpacity>
               </View>
             </Animated.View>
           )}
