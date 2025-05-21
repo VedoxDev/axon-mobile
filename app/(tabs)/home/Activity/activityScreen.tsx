@@ -5,7 +5,7 @@ import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const PROJECT_TITLE = 'My Space App';
+const projectName = 'My Space App';
 
 // Mocked task data
 const tasks = [
@@ -50,15 +50,12 @@ export default function ActivityScreen() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/home')}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/home')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={[styles.projectTitle, { color: theme.text }]}>My Space App</Text>
+        <Text style={styles.projectTitle}>{projectName}</Text>
       </View>
 
       {/* Progress Bar */}
@@ -105,17 +102,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    marginTop: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    marginBottom: 24,
+    marginTop: 30,
   },
   backButton: {
     marginRight: 16,
+    marginLeft: 16,
+    backgroundColor: '#42A5F5',
+    borderRadius: 20,
+    padding: 6,
   },
   projectTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#fff',
   },
   progressContainer: {
     alignItems: 'center',

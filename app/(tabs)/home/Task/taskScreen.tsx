@@ -1,12 +1,13 @@
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useState } from 'react';
-import Modal from 'react-native-modal';
+
+const projectName = 'My Space App';
 
 // Define types for our task board
 type Task = {
@@ -101,9 +102,8 @@ export default function TaskScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [columns, setColumns] = useState(initialColumns);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isModalVisible, setModalVisible] = useState(false);
 
   const handleDragEnd = (columnId: string, tasks: Task[]) => {
     setColumns(prevColumns =>
@@ -114,17 +114,10 @@ export default function TaskScreen() {
   };
 
   const openTaskModal = (task: Task) => {
-    setSelectedTask(task);
-    setModalVisible(true);
-  };
-
-  const closeTaskModal = () => {
-    setModalVisible(false);
-    setSelectedTask(null);
-  };
-
-  const getColumnForTask = (taskId: string) => {
-    return columns.find(col => col.tasks.some(t => t.id === taskId));
+    router.push({
+      pathname: '/(tabs)/home/Task/modal',
+      params: { taskId: task.id }
+    });
   };
 
   const renderTaskCard = ({ item, drag, isActive }: RenderItemParams<Task>) => (
@@ -181,43 +174,13 @@ export default function TaskScreen() {
     </View>
   );
 
-  const renderTaskModal = () => {
-    if (!selectedTask) return null;
-    const column = getColumnForTask(selectedTask.id);
-
-    return (
-      <Modal
-        isVisible={isModalVisible}
-        onSwipeComplete={closeTaskModal}
-        swipeDirection={['down']}
-        style={styles.modal}
-        onBackdropPress={closeTaskModal}
-      >
-        <View style={[styles.modalContent, { borderColor: column?.color }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/home')} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={theme.text} />
-            </TouchableOpacity>
-            <View style={[styles.statusTag, { backgroundColor: column?.color }]}>
-              <Text style={styles.statusText}>{column?.title}</Text>
-            </View>
-          </View>
-
-        </View>
-      </Modal>
-    );
-  };
-
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.push('/(tabs)/home')}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        <TouchableOpacity onPress={() => router.push('/(tabs)/home')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={[styles.projectTitle, { color: theme.text }]}>My Space App</Text>
+        <Text style={styles.projectTitle}>{projectName}</Text>
       </View>
 
       <ScrollView
@@ -231,8 +194,6 @@ export default function TaskScreen() {
       >
         {columns.map(renderColumn)}
       </ScrollView>
-
-      {renderTaskModal()}
     </SafeAreaView>
   );
 }
@@ -244,16 +205,19 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    marginBottom: 24,
   },
   backButton: {
     marginRight: 16,
+    marginLeft: 16,
+    backgroundColor: '#42A5F5',
+    borderRadius: 20,
+    padding: 6,
   },
   projectTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
+    color: '#fff',
   },
   boardScrollContainer: {
     padding: 16,
@@ -292,6 +256,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: '#000000',
   },
   taskDescription: {
     fontSize: 14,
@@ -315,11 +280,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  // Modal styles
   modal: {
-    padding: 0,
-    marginTop: 350,
-    width: 370,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -329,9 +290,9 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     minHeight: 500,
     maxHeight: 700,
-    width: '100%',
-    maxWidth: 425,
-    alignSelf: 'center',
+    marginLeft: 375,
+    marginTop: 500,
+    width: 375,
     overflow: 'hidden',
   },
   modalHeader: {

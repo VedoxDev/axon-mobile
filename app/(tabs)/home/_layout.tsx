@@ -173,22 +173,25 @@ export default function HomeLayout() {
               <View style={styles.projectTabs}>
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/Task')}
+                  onPress={() => router.push('/home/Task/taskScreen')}
                 >
                   <Ionicons name="checkmark-circle" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
                 </TouchableOpacity>
-                <View style={styles.tabItem}>
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/(tabs)/home')}
+                >
                   <Ionicons name="chatbubble" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.tabItem}>
                   <Ionicons name="calendar" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Calendario</Text>
                 </View>      
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/Activity/activityScreen')}
+                  onPress={() => router.push('/home/Activity/activityScreen')}
                 >
                   <Ionicons name="pulse" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
@@ -197,17 +200,20 @@ export default function HomeLayout() {
                   <Ionicons name="folder" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Archivos</Text>
                 </View>
-                <View style={styles.tabItem}>
-                  <Ionicons name="people" size={18} color={theme.text} style={styles.tabIcon} />
-                  <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
-                </View>
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/Announcements/annScreen')}
+                  onPress={() => router.push('/home/Meetings/meetingScreen')}
+                >
+                  <Ionicons name="people" size={18} color={theme.text} style={styles.tabIcon} />
+                  <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/home/Announcements/annScreen')}
                 >
                   <Ionicons name="megaphone" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>
-                  </TouchableOpacity>
+                </TouchableOpacity>
               </View>
             </Animated.View>
           )}
