@@ -135,7 +135,7 @@ export default function HomeLayout() {
                     setSelectedProject={setSelectedProject}
                   />
                 ))}
-                <TouchableOpacity style={[styles.projectGridButton, styles.addProjectButton]}>
+                <TouchableOpacity onPress={() => router.push('/home/newProject')} style={[styles.projectGridButton, styles.addProjectButton]}>
                   <Ionicons name="add" size={24} color={theme.text} />
                 </TouchableOpacity>
               </View>
@@ -160,7 +160,7 @@ export default function HomeLayout() {
                   </TouchableOpacity>
                 ))}
               </View>
-              <TouchableOpacity style={[styles.sidebarButton, styles.addProjectButton]}>
+              <TouchableOpacity onPress={() => router.push('/home/newProject')} style={[styles.sidebarButton, styles.addProjectButton]}>
                 <Ionicons name="add" size={24} color={theme.text} />
               </TouchableOpacity>
             </>
