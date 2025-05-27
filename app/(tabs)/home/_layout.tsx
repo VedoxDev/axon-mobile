@@ -46,17 +46,28 @@ export default function HomeLayout() {
   const projectsTitleOpacity = useSharedValue(0);
   const projectDetailsTranslateY = useSharedValue(500);
   const projectDetailsOpacity = useSharedValue(0);
+  const topButtonsTranslateY = useSharedValue(-20);
+  const topButtonsOpacity = useSharedValue(0);
+  const floatingSettingsOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (selectedProject) {
       setIsAnimating(true);
       sidebarWidth.value = withTiming(EXPANDED_WIDTH, { duration: 350 });
       contentTranslate.value = withTiming(EXPANDED_WIDTH, { duration: 350 });
+      topButtonsTranslateY.value = withTiming(0, { duration: 300 });
+      topButtonsOpacity.value = withTiming(1, { duration: 300 });
+      floatingSettingsOpacity.value = withTiming(0, { duration: 200 });
       setTimeout(() => setIsAnimating(false), 350);
     } else {
       setIsAnimating(true);
       sidebarWidth.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
       contentTranslate.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
+      topButtonsTranslateY.value = withTiming(-20, { duration: 300 });
+      topButtonsOpacity.value = withTiming(0, { duration: 300 });
+      setTimeout(() => {
+        floatingSettingsOpacity.value = withTiming(1, { duration: 200 });
+      }, 150);
       setTimeout(() => setIsAnimating(false), 350);
     }
   }, [selectedProject]);
@@ -99,6 +110,15 @@ export default function HomeLayout() {
     opacity: projectDetailsOpacity.value,
   }));
 
+  const topButtonsAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: topButtonsTranslateY.value }],
+    opacity: topButtonsOpacity.value,
+  }));
+
+  const floatingSettingsAnimStyle = useAnimatedStyle(() => ({
+    opacity: floatingSettingsOpacity.value,
+  }));
+
   const showSidebar = !pathname.startsWith('/(tabs)/chat/');
 
   return (
@@ -117,12 +137,20 @@ export default function HomeLayout() {
         >
           {selectedProject ? (
             <>
-              <TouchableOpacity style={styles.largeMensajesButton} onPress={() => setSelectedProject(null)}>
-                <Ionicons name="chatbubble" size={24} color={ colorScheme === 'dark' ? theme.text : theme.background } style={{ marginRight: 10 }} />
-                <Animated.View style={mensajeTextAnimStyle}>
-                  <Text style={[styles.largeMensajesText, { color: colorScheme === 'dark' ? theme.text : theme.background }]}>Mensajes</Text>
-                </Animated.View>
-              </TouchableOpacity>
+              <Animated.View style={[styles.topButtonsContainer, topButtonsAnimStyle]}>
+                <TouchableOpacity style={styles.largeMensajesButton} onPress={() => setSelectedProject(null)}>
+                  <Ionicons name="chatbubble" size={24} color={ colorScheme === 'dark' ? theme.text : theme.background } style={{ marginRight: 10 }} />
+                  <Animated.View style={mensajeTextAnimStyle}>
+                    <Text style={[styles.largeMensajesText, { color: colorScheme === 'dark' ? theme.text : theme.background }]}>Mensajes</Text>
+                  </Animated.View>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.settingsButtonExpanded, { backgroundColor: '#42A5F5' }]}
+                  onPress={() => router.push('/project/Settings/settingsScreen')}
+                >
+                  <Ionicons name="settings-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+              </Animated.View>
               <Animated.View style={[projectsTitleAnimStyle, { width: '100%', alignItems: 'flex-start' }]}>
                 <Text style={[styles.projectsTitle, { color: theme.text, textAlign: 'left', paddingLeft: 0 }]}>Tus proyectos</Text>
               </Animated.View>
@@ -214,6 +242,7 @@ export default function HomeLayout() {
                   <Ionicons name="megaphone" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>
                 </TouchableOpacity>
+                
               </View>
             </Animated.View>
           )}
@@ -229,6 +258,17 @@ export default function HomeLayout() {
       >
         <Slot />
       </Animated.View>
+
+      {showSidebar && !selectedProject && (
+        <Animated.View style={[styles.settingsButton, floatingSettingsAnimStyle]}>
+          <TouchableOpacity 
+            style={[styles.sidebarButton, { backgroundColor: '#42A5F5' }]}
+            onPress={() => router.push('/project/Settings/settingsScreen')}
+          >
+            <Ionicons name="settings-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -346,6 +386,13 @@ const styles = StyleSheet.create({
     flex: 1,
     zIndex: 1,
   },
+  topButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
   largeMensajesButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,10 +400,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#0066cc',
     borderRadius: 24,
     height: 48,
-    paddingHorizontal: 20,
-    alignSelf: 'stretch',
-    marginHorizontal: 10,
-    marginTop: 0,
+    flex: 1,
+    marginRight: 10,
     paddingLeft: 15,
   },
   largeMensajesText: {
@@ -371,5 +416,18 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     marginTop: 5,
     paddingLeft: 20,
+  },
+  settingsButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 10,
+    zIndex: 3,
+  },
+  settingsButtonExpanded: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
