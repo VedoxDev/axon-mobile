@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Image, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Image, ScrollView, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -30,7 +30,8 @@ export default function Modal() {
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
 
   return (
-    <View style={styles.overlay}>
+    <View style={styles.container}>
+      <Pressable style={styles.backdrop} onPress={() => router.back()} />
       <View
         style={[
           styles.modalContainer,
@@ -127,15 +128,20 @@ export default function Modal() {
 const { height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
-  overlay: {
+  container: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+    zIndex: 0,
   },
   modalContainer: {
     height: height * 0.7,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
+    zIndex: 1,
   },
   handleBar: {
     width: 40,

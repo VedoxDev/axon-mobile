@@ -46,7 +46,7 @@ export default function MeetingsScreen() {
     <ScrollView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]} contentContainerStyle={{ paddingBottom: 32 }}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/home')} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.projectTitle}>{projectName}</Text>

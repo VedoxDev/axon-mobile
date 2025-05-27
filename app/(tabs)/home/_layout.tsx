@@ -173,7 +173,7 @@ export default function HomeLayout() {
               <View style={styles.projectTabs}>
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/home/Task/taskScreen')}
+                  onPress={() => router.push('/project/Task/taskScreen')}
                 >
                   <Ionicons name="checkmark-circle" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
@@ -191,7 +191,7 @@ export default function HomeLayout() {
                 </View>      
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/home/Activity/activityScreen')}
+                  onPress={() => router.push('/project/Activity/activityScreen')}
                 >
                   <Ionicons name="pulse" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
@@ -202,14 +202,14 @@ export default function HomeLayout() {
                 </View>
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/home/Meetings/meetingScreen')}
+                  onPress={() => router.push('/project/Meetings/meetingScreen')}
                 >
                   <Ionicons name="people" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/home/Announcements/annScreen')}
+                  onPress={() => router.push('/project/Announcements/annScreen')}
                 >
                   <Ionicons name="megaphone" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>

@@ -1,11 +1,12 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, Animated } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const projectName = 'My Space App';
 
@@ -104,6 +105,32 @@ export default function TaskScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [columns, setColumns] = useState(initialColumns);
+  const [isModalActive, setIsModalActive] = useState(false);
+
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isModalActive) {
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isModalActive, overlayOpacity]);
+
+  useEffect(() => {
+    if (isFocused && isModalActive) {
+      setIsModalActive(false);
+    }
+  }, [isFocused]);
 
   const handleDragEnd = (columnId: string, tasks: Task[]) => {
     setColumns(prevColumns =>
@@ -114,8 +141,9 @@ export default function TaskScreen() {
   };
 
   const openTaskModal = (task: Task) => {
+    setIsModalActive(true);
     router.push({
-      pathname: '/(tabs)/home/Task/modal',
+      pathname: '/project/Task/modal',
       params: { taskId: task.id }
     });
   };
@@ -176,8 +204,16 @@ export default function TaskScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
+      <Animated.View
+        pointerEvents={isModalActive ? 'auto' : 'none'}
+        style={[
+          styles.overlay,
+          { opacity: overlayOpacity, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+        ]}
+      />
+
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/home')} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.projectTitle}>{projectName}</Text>
@@ -201,6 +237,10 @@ export default function TaskScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   header: {
     flexDirection: 'row',
