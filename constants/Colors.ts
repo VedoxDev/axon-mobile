@@ -19,6 +19,8 @@ export const Colors = {
     primary: '#007AFF',
     card: '#F2F2F2',
     inputBackground: '#FFFFFF',
+    red: '#FF3B30',
+    green: '#34C759',
   },
   dark: {
     text: '#ECEDEE',
@@ -32,5 +34,7 @@ export const Colors = {
     primary: '#007AFF',
     card: '#282828',
     inputBackground: '#3A3A3A',
+    red: '#FF453A',
+    green: '#32D74B',
   },
 };
