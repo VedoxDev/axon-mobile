@@ -55,28 +55,6 @@ const initialColumns: Column[] = [
         title: '[Hero Section] - Tamaño del hero',
         description: 'Ajustar el tamaño del hero section para que sea más impactante y responsivo en diferentes dispositivos.',
         assignee: 'Juan',
-        dueDate: '11 dic, 14:00',
-        deadlineType: 'Plazo abierto',
-        members: [
-          { id: 'm1', name: 'Juan', avatar: 'https://i.pravatar.cc/150?img=1' },
-          { id: 'm2', name: 'María', avatar: 'https://i.pravatar.cc/150?img=2' },
-        ],
-        comments: [
-          {
-            id: 'c1',
-            user: 'Juan',
-            avatar: 'https://i.pravatar.cc/150?img=1',
-            message: 'He empezado a trabajar en el diseño',
-            timestamp: '10:30 AM',
-          },
-          {
-            id: 'c2',
-            user: 'María',
-            avatar: 'https://i.pravatar.cc/150?img=2',
-            message: '¿Necesitas ayuda con algo específico?',
-            timestamp: '11:15 AM',
-          },
-        ],
       },
       { id: '2', title: 'Revisar código', description: 'Code review del PR #123', assignee: 'María' },
     ],
@@ -87,6 +65,7 @@ const initialColumns: Column[] = [
     color: '#FFB74D',
     tasks: [
       { id: '3', title: 'Implementar API', description: 'Desarrollar endpoints para usuarios', assignee: 'Carlos' },
+      { id: '4', title: 'Revisar el footer', description: 'Se jodio el footer, se fue a la verga', assignee: 'Victor' },
     ],
   },
   {
@@ -94,7 +73,8 @@ const initialColumns: Column[] = [
     title: 'Terminado',
     color: '#4CAF50',
     tasks: [
-      { id: '4', title: 'Testing', description: 'Pruebas unitarias completadas', assignee: 'Ana' },
+      { id: '5', title: 'Testing', description: 'Pruebas unitarias completadas', assignee: 'Ana' },
+      { id: '6', title: 'Prueba Unitaria del diseño de gráfica', description: 'Pruebas unitarias completadas', assignee: 'María' },
     ],
   },
 ];
@@ -162,7 +142,7 @@ export default function TaskScreen() {
         },
       ]}
     >
-      <Text style={[styles.taskTitle, { color: theme.text }]}>{item.title}</Text>
+      <Text style={[styles.taskTitle, { color: theme.textInWhite }]}>{item.title}</Text>
       <Text style={[styles.taskDescription, { color: theme.gray }]}>{item.description}</Text>
       <View style={styles.taskFooter}>
         <Text style={[styles.assignee, { color: theme.gray }]}>{item.assignee}</Text>
@@ -271,7 +251,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
   },
   columnTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
   },
@@ -279,24 +259,23 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   taskCard: {
-    borderRadius: 8,
+    borderRadius: 15,
     padding: 12,
     marginBottom: 12,
-    borderWidth: 1,
+    borderWidth: 0,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 1,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 15,
+    elevation: 3,
   },
   taskTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
-    color: '#000000',
   },
   taskDescription: {
     fontSize: 14,

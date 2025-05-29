@@ -19,6 +19,9 @@ export default function NewProjectScreen() {
   const [selectedColor, setSelectedColor] = useState('#42A5F5');
   const [members, setMembers] = useState<Member[]>([]);
   const [newMember, setNewMember] = useState('');
+  const [nameFocused, setNameFocused] = useState(false);
+  const [descriptionFocused, setDescriptionFocused] = useState(false);
+  const [memberFocused, setMemberFocused] = useState(false);
 
   const colorOptions = [
     '#42A5F5', // Blue
@@ -27,6 +30,8 @@ export default function NewProjectScreen() {
     '#EF5350', // Red
     '#AB47BC', // Purple
     '#26A69A', // Teal
+    '#FF45D0', // Teal
+    
   ];
 
   const handleAddMember = () => {
@@ -46,7 +51,7 @@ export default function NewProjectScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -58,14 +63,18 @@ export default function NewProjectScreen() {
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: theme.text }]}>Project Name</Text>
           <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.inputBackground,
-              color: theme.text,
-              borderColor: theme.gray
-            }]}
+            style={[styles.input, 
+              { 
+                backgroundColor: theme.inputBackground, 
+                color: theme.text, 
+                borderColor: nameFocused ? 
+                theme.orange : theme.gray 
+              }]}
             value={projectName}
             onChangeText={setProjectName}
             placeholder="Enter project name"
+            onFocus={() => setNameFocused(true)}
+            onBlur={() => setNameFocused(false)}
             placeholderTextColor={theme.text + '80'}
           />
         </View>
@@ -73,14 +82,18 @@ export default function NewProjectScreen() {
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: theme.text }]}>Description</Text>
           <TextInput
-            style={[styles.input, styles.textArea, { 
-              backgroundColor: theme.inputBackground,
-              color: theme.text,
-              borderColor: theme.gray
-            }]}
+            style={[styles.inputDescription, 
+              { 
+                backgroundColor: theme.inputBackground, 
+                color: theme.text, 
+                borderColor: descriptionFocused ? 
+                theme.orange : theme.gray 
+              }]}
             value={description}
             onChangeText={setDescription}
             placeholder="Enter project description"
+            onFocus={() => setDescriptionFocused(true)}
+            onBlur={() => setDescriptionFocused(false)}
             placeholderTextColor={theme.text + '80'}
             multiline
             numberOfLines={4}
@@ -108,14 +121,18 @@ export default function NewProjectScreen() {
           <Text style={[styles.label, { color: theme.text }]}>Team Members</Text>
           <View style={styles.memberInputContainer}>
             <TextInput
-              style={[styles.input, styles.memberInput, { 
-                backgroundColor: theme.inputBackground,
-                color: theme.text,
-                borderColor: theme.gray
+              style={[styles.input, styles.memberInput, 
+                { 
+                backgroundColor: theme.inputBackground, 
+                color: theme.text, 
+                borderColor: memberFocused ? 
+                theme.orange : theme.gray 
               }]}
               value={newMember}
               onChangeText={setNewMember}
               placeholder="Enter member name or email"
+              onFocus={() => setMemberFocused(true)}
+              onBlur={() => setMemberFocused(false)}
               placeholderTextColor={theme.text + '80'}
             />
             <TouchableOpacity 
@@ -163,7 +180,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
-    marginTop: 30,
+    marginTop: 45,
   },
   backButton: {
     marginRight: 16,
@@ -194,6 +211,15 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
+  inputDescription: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    height: 100,
+    textAlign: 'left',
+    textAlignVertical: 'top'
+  },
   textArea: {
     height: 100,
     textAlignVertical: 'top',
@@ -201,7 +227,7 @@ const styles = StyleSheet.create({
   colorGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
     marginTop: 8,
   },
   colorOption: {

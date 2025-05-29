@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#181A20',
     paddingHorizontal: 20,
-    paddingTop: 32,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
+    marginTop: 45,
   },
   backButton: {
     marginRight: 16,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   meetingCard: {
-    backgroundColor: '#23262F',
+    backgroundColor: '#3A3A3A',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   pastMeetingCard: {
-    backgroundColor: '#23262F',
+    backgroundColor: '#3A3A3A',
     opacity: 0.6,
   },
   pastMeetingHeader: {

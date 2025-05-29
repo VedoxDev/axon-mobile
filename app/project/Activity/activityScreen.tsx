@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
-    marginTop: 30,
+    marginTop: 45,
   },
   backButton: {
     marginRight: 16,
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     alignItems: 'center',
     marginBottom: 32,
-    marginTop: 32,
+    marginTop: 10,
   },
   progressText: {
     color: '#fff',
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   progressBarBg: {
     width: '80%',
     height: 18,
-    backgroundColor: '#2C2F36',
+    backgroundColor: '#3A3A3A',
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   section: {
-    backgroundColor: '#23242A',
+    backgroundColor: '#3A3A3A',
     borderRadius: 16,
     padding: 16,
     marginBottom: 24,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A1B20',
+    backgroundColor: '#2A2A2A',
     borderRadius: 12,
     padding: 12,
     marginBottom: 10,

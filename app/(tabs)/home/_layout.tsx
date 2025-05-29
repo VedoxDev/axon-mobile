@@ -25,7 +25,7 @@ const PROJECTS: Project[] = [
 ];
 
 const SIDEBAR_WIDTH = 70;
-const EXPANDED_WIDTH = 330;
+const EXPANDED_WIDTH = 412;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 // ...imports stay the same
@@ -39,6 +39,7 @@ export default function HomeLayout() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showProjectDetailsCard, setShowProjectDetailsCard] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
   const sidebarWidth = useSharedValue(SIDEBAR_WIDTH);
   const contentTranslate = useSharedValue(0);
@@ -121,6 +122,16 @@ export default function HomeLayout() {
 
   const showSidebar = !pathname.startsWith('/(tabs)/chat/');
 
+  const toggleSidebar = () => {
+    if (selectedProject) {
+      setSelectedProject(null);
+      setIsSidebarExpanded(false);
+    } else {
+      setSelectedProject(PROJECTS[0]); // Select the first project by default
+      setIsSidebarExpanded(true);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.background : theme.card, paddingTop: insets.top, overflow: 'hidden' }]}> 
       {showSidebar && (
@@ -138,17 +149,17 @@ export default function HomeLayout() {
           {selectedProject ? (
             <>
               <Animated.View style={[styles.topButtonsContainer, topButtonsAnimStyle]}>
-                <TouchableOpacity style={styles.largeMensajesButton} onPress={() => setSelectedProject(null)}>
+                <TouchableOpacity style={styles.largeMensajesButton} onPress={toggleSidebar}>
                   <Ionicons name="chatbubble" size={24} color={ colorScheme === 'dark' ? theme.text : theme.background } style={{ marginRight: 10 }} />
                   <Animated.View style={mensajeTextAnimStyle}>
                     <Text style={[styles.largeMensajesText, { color: colorScheme === 'dark' ? theme.text : theme.background }]}>Mensajes</Text>
                   </Animated.View>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.settingsButtonExpanded, { backgroundColor: '#42A5F5' }]}
+                  style={[styles.settingsButtonExpanded, { backgroundColor: theme.settingsButton }]}
                   onPress={() => router.push('/project/Settings/settingsScreen')}
                 >
-                  <Ionicons name="settings-outline" size={24} color="#fff" />
+                  <Ionicons name="settings-outline" size={24} color={theme.settingsIcon} />
                 </TouchableOpacity>
               </Animated.View>
               <Animated.View style={[projectsTitleAnimStyle, { width: '100%', alignItems: 'flex-start' }]}>
@@ -163,20 +174,20 @@ export default function HomeLayout() {
                     setSelectedProject={setSelectedProject}
                   />
                 ))}
-                <TouchableOpacity onPress={() => router.push('/home/newProject')} style={[styles.projectGridButton, styles.addProjectButton]}>
-                  <Ionicons name="add" size={24} color={theme.text} />
-                </TouchableOpacity>
+                <TouchableOpacity onPress={() => router.push('/project/NewProject/newProject')} style={[styles.sidebarButton, styles.addProjectButton, { borderColor: theme.addProjectBorder }]}>
+                <Ionicons name="add" size={24} color={theme.text} />
+              </TouchableOpacity>
               </View>
             </>
           ) : (
             <>
               <TouchableOpacity 
-                style={[styles.sidebarButton, styles.messagesButton]}
-                onPress={() => setSelectedProject(null)}
+                style={[styles.sidebarButton, styles.messagesButton, { backgroundColor: theme.chatButton }]}
+                onPress={toggleSidebar}
               >
                 <Ionicons name="chatbubble" size={24} color="#fff" />
               </TouchableOpacity>
-              <View style={[styles.separator, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.text }]} />
+              <View style={[styles.separator, { backgroundColor: theme.separator }]} />
               <View pointerEvents={isAnimating ? 'none' : 'auto'}>
                 {PROJECTS.map((project) => (
                   <TouchableOpacity
@@ -188,7 +199,7 @@ export default function HomeLayout() {
                   </TouchableOpacity>
                 ))}
               </View>
-              <TouchableOpacity onPress={() => router.push('/home/newProject')} style={[styles.sidebarButton, styles.addProjectButton]}>
+              <TouchableOpacity onPress={() => router.push('/project/NewProject/newProject')} style={[styles.sidebarButton, styles.addProjectButton, { borderColor: theme.addProjectBorder }]}>
                 <Ionicons name="add" size={24} color={theme.text} />
               </TouchableOpacity>
             </>
@@ -262,10 +273,10 @@ export default function HomeLayout() {
       {showSidebar && !selectedProject && (
         <Animated.View style={[styles.settingsButton, floatingSettingsAnimStyle]}>
           <TouchableOpacity 
-            style={[styles.sidebarButton, { backgroundColor: '#42A5F5' }]}
+            style={[styles.sidebarButton, { backgroundColor: theme.settingsButton }]}
             onPress={() => router.push('/project/Settings/settingsScreen')}
           >
-            <Ionicons name="settings-outline" size={24} color="#fff" />
+            <Ionicons name="settings-outline" size={24} color={theme.settingsIcon} />
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -309,7 +320,6 @@ const styles = StyleSheet.create({
   separator: {
     width: '60%',
     height: 1,
-    backgroundColor: '#444',
     marginVertical: 15,
   },
   projectButtonText: {
@@ -320,7 +330,6 @@ const styles = StyleSheet.create({
   addProjectButton: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#555',
     borderStyle: 'dashed',
     marginTop: 10,
     borderRadius: 24,
@@ -347,7 +356,6 @@ const styles = StyleSheet.create({
     margin: 10,
     padding: 16,
     elevation: 2,
-    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },

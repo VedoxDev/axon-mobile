@@ -40,7 +40,6 @@ const ANNOUNCEMENTS = [
   },
 ];
 
-const COLORS = ['#42A5F5', '#FFB74D'];
 
 export default function AnnScreen() {
   const colorScheme = useColorScheme();
@@ -61,10 +60,11 @@ export default function AnnScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item, index }) => {
-          const bgColor = COLORS[index % COLORS.length];
-          const textColor = index % 2 === 0 ? '#FFFFFF' : '#000000';
+          const bgColor = '#3A3A3A';
+          const borderCard = index % 2 === 0 ? '#F57C00' : '#64B5F6';
+          const textColor = '#FFFFFF';
           return (
-            <View style={[styles.card, { backgroundColor: bgColor }]}>
+            <View style={[styles.card, { backgroundColor: bgColor , borderColor: borderCard, borderWidth: 2 }]}>
               <Text style={[styles.author, { color: textColor }]}>{item.autor}</Text>
               <Text style={[styles.message, { color: textColor }]}>{item.message}</Text>
               <Text style={[styles.timestamp, { color: textColor, opacity: 0.7 }]}>{item.timestamp}</Text>
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
-    marginTop: 30,
+    marginTop: 45,
   },
   backButton: {
     marginRight: 16,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   card: {
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 20,
     minHeight: 90,
     justifyContent: 'center',
@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
+    
   },
   author:{
     fontSize: 20,
