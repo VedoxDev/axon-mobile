@@ -22,11 +22,23 @@ const PROJECTS: Project[] = [
   { id: 'p3', name: 'Project C', color: '#BAE1FF' },
   { id: 'p4', name: 'Project D', color: '#FFFFBA' },
   { id: 'p5', name: 'Project E', color: '#FFDFBA' },
+  { id: 'p6', name: 'Project F', color: '#BAFFC9' },
+  { id: 'p7', name: 'Project G', color: '#FFDFBA' },
+  { id: 'p8', name: 'Project H', color: '#BAE1FF' },
+  { id: 'p9', name: 'Project I', color: '#FFB3BA' },
 ];
 
 const SIDEBAR_WIDTH = 70;
 const EXPANDED_WIDTH = 412;
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// Add sample members data
+const SAMPLE_MEMBERS = [
+  { id: '1', name: 'Juan', avatar: 'J' },
+  { id: '2', name: 'María', avatar: 'M' },
+  { id: '3', name: 'Carlos', avatar: 'C' },
+  { id: '4', name: 'Ana', avatar: 'A' },
+];
 
 // ...imports stay the same
 
@@ -174,7 +186,7 @@ export default function HomeLayout() {
                     setSelectedProject={setSelectedProject}
                   />
                 ))}
-                <TouchableOpacity onPress={() => router.push('/project/NewProject/newProject')} style={[styles.sidebarButton, styles.addProjectButton, { borderColor: theme.addProjectBorder }]}>
+                <TouchableOpacity onPress={() => router.push('/project/NewProject/newProject')} style={[styles.sidebarButton, styles.addProjectButton, { borderColor: theme.orange }]}>
                 <Ionicons name="add" size={24} color={theme.text} />
               </TouchableOpacity>
               </View>
@@ -199,7 +211,7 @@ export default function HomeLayout() {
                   </TouchableOpacity>
                 ))}
               </View>
-              <TouchableOpacity onPress={() => router.push('/project/NewProject/newProject')} style={[styles.sidebarButton, styles.addProjectButton, { borderColor: theme.addProjectBorder }]}>
+              <TouchableOpacity onPress={() => router.push('/project/NewProject/newProject')} style={[styles.sidebarButton, styles.addProjectButton, { borderColor: theme.orange }]}>
                 <Ionicons name="add" size={24} color={theme.text} />
               </TouchableOpacity>
             </>
@@ -209,6 +221,20 @@ export default function HomeLayout() {
             <Animated.View style={[styles.projectDetailsCard, { backgroundColor: theme.inputBackground }, projectDetailsAnimStyle]}> 
               <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
               <Text style={{ color: theme.text, marginBottom: 10 }}>Rediseño Web de Axon</Text>
+              
+              {/* Progress Section */}
+              <View style={styles.progressSection}>
+                <View style={styles.progressHeader}>
+                  <Text style={[styles.progressTitle, { color: theme.text }]}>Progreso del Proyecto</Text>
+                  <Text style={[styles.progressPercentage, { color: theme.progressBarText }]}>45%</Text>
+                </View>
+                <View style={[styles.progressBarContainer, { backgroundColor: theme.progressBarBackground }]}>
+                  <View style={[styles.progressBarFill, { backgroundColor: theme.progressBarFill, width: '45%' }]} />
+                </View>
+              </View>
+
+              {/* Members Section */}
+
               <View style={styles.projectTabs}>
                 <TouchableOpacity 
                   style={styles.tabItem}
@@ -219,15 +245,17 @@ export default function HomeLayout() {
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.tabItem}
-                  onPress={() => router.push('/(tabs)/home')}
+                  onPress={toggleSidebar}
                 >
                   <Ionicons name="chatbubble" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
                 </TouchableOpacity>
-                <View style={styles.tabItem}>
-                  <Ionicons name="calendar" size={18} color={theme.text} style={styles.tabIcon} />
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/project/Calendar/calendarScreen')}
+                ><Ionicons name="calendar" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Calendario</Text>
-                </View>      
+                </TouchableOpacity>      
                 <TouchableOpacity 
                   style={styles.tabItem}
                   onPress={() => router.push('/project/Activity/activityScreen')}
@@ -235,10 +263,13 @@ export default function HomeLayout() {
                   <Ionicons name="pulse" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
                 </TouchableOpacity>
-                <View style={styles.tabItem}>
+                <TouchableOpacity 
+                  style={styles.tabItem}
+                  onPress={() => router.push('/project/Files/filesScreen')}
+                >
                   <Ionicons name="folder" size={18} color={theme.text} style={styles.tabIcon} />
                   <Text style={[styles.projectTab, { color: theme.text }]}>Archivos</Text>
-                </View>
+                  </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.tabItem}
                   onPress={() => router.push('/project/Meetings/meetingScreen')}
@@ -437,5 +468,76 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  progressSection: {
+    marginBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  progressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  progressBarContainer: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  membersSection: {
+    marginBottom: 20,
+  },
+  membersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  membersTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  memberCount: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  memberCountText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  membersList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  memberAvatar: {
+    alignItems: 'center',
+  },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  memberName: {
+    fontSize: 12,
   },
 });

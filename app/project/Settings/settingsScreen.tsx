@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    margin: 16,
+    margin: 0,
     borderRadius: 12,
     padding: 16,
   },

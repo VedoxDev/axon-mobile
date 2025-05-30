@@ -42,6 +42,7 @@ export default function MessagesScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const [activeView, setActiveView] = useState<'chats' | 'groups'>('chats');
+  const [nameFocused, setNameFocused] = useState(false);
 
   const renderChatItem = ({ item }: { item: ChatItem }) => (
     <View style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}>
@@ -78,17 +79,22 @@ export default function MessagesScreen() {
     <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
       <Text style={[styles.title, { color: theme.text }]}>Mensajes</Text>
 
-      <View style={[styles.searchContainer, { backgroundColor: colorScheme === 'dark' ? theme.background : theme.card }]}>
         <TextInput
-          style={[styles.searchInput, { color: theme.text }]}
+          style={[styles.searchInput, { 
+            backgroundColor: theme.inputBackground, 
+            color: theme.text, 
+            borderColor: nameFocused ? 
+            theme.orange : theme.gray 
+          }]}
           placeholder={activeView === 'chats' ? "Buscar chats..." : "Buscar grupos..."}
           placeholderTextColor={theme.gray}
+          onFocus={() => setNameFocused(true)}
+          onBlur={() => setNameFocused(false)}
         />
-      </View>
 
       <View style={styles.filterContainer}>
         <TouchableOpacity 
-          style={[styles.filterButton, { backgroundColor: activeView === 'chats' ? theme.chatButton : theme.card }]}
+          style={[styles.filterButton, { backgroundColor: activeView === 'chats' ? theme.chatAvatar : theme.card }]}
           onPress={() => setActiveView('chats')}
         >
           <Text style={[styles.filterButtonText, { color: activeView === 'chats' ? theme.card : theme.text }]}>Chats</Text>
@@ -135,14 +141,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingLeft: 10,
   },
-  searchContainer: {
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
   searchInput: {
     height: 50,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 10,
     fontSize: 16,
+    marginBottom: 10
   },
   filterContainer: {
     flexDirection: 'row',
