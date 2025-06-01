@@ -3,24 +3,71 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, Stack } from "expo-router";
 import { useState } from "react";
-import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../constants/Colors';
-import { useRouter } from 'expo-router';
+import { useAuth } from './auth/AuthProvider';
 
 const logo = require('@/assets/images/logo.png');
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const { login } = useAuth();
 
+  // Form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Local loading state for login button
 
   const insets = useSafeAreaInsets();
-  const router = useRouter();
+
+  // Email validation function
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
+  // Check if form is valid
+  const isFormValid = isValidEmail(email) && password.length > 0;
+
+  const handleLogin = async () => {
+    // Basic validation (although button should be disabled if these conditions aren't met)
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu email');
+      return;
+    }
+    if (!password.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await login(email.trim(), password);
+      // On successful login, the navigation will be handled automatically by the AuthProvider and _layout.tsx
+    } catch (error: any) {
+      // Clear password field on login error
+      setPassword('');
+      
+      // Handle specific error cases
+      if (error.message.includes('Invalid email or password')) {
+        Alert.alert('Error de inicio de sesión', 'Usuario o contraseña incorrectos, intenta de nuevo');
+      } else {
+        Alert.alert('Error de inicio de sesión', error.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -40,11 +87,21 @@ export default function LoginScreen() {
         <Text style={[styles.subtitle, { color: theme.text, textAlign: 'left', fontFamily: 'Inter-Regular' }]}>Inicia sesión para continuar</Text>
 
         <TextInput
-          style={[styles.input, { backgroundColor: theme.inputBackground, color: theme.text, borderColor: emailFocused ? theme.orange : theme.gray }]}
+          style={[styles.input, { 
+            backgroundColor: theme.inputBackground, 
+            color: theme.text, 
+            borderColor: emailFocused ? theme.orange : theme.gray 
+          }]}
           placeholder="Email"
           placeholderTextColor={theme.text + "80"}
+          value={email}
+          onChangeText={setEmail}
           onFocus={() => setEmailFocused(true)}
           onBlur={() => setEmailFocused(false)}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          editable={!isLoading}
         />
 
         <View style={[styles.inputContainer, { borderColor: passwordFocused ? theme.orange : theme.gray, backgroundColor: theme.inputBackground }]}>
@@ -52,13 +109,17 @@ export default function LoginScreen() {
             style={[styles.inputInsideContainer, { color: theme.text }]}
             placeholder="Contraseña"
             placeholderTextColor={theme.text + "80"}
+            value={password}
+            onChangeText={setPassword}
             secureTextEntry={!isPasswordVisible}
             onFocus={() => setPasswordFocused(true)}
             onBlur={() => setPasswordFocused(false)}
+            editable={!isLoading}
           />
           <TouchableOpacity
             style={styles.passwordVisibilityToggle}
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            disabled={isLoading}
           >
             <Feather
               name={isPasswordVisible ? 'eye-off' : 'eye'}
@@ -69,13 +130,27 @@ export default function LoginScreen() {
         </View>
 
         <View style={{ width: '100%', alignItems: 'flex-end' }}>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => {}} disabled={isLoading}>
             <Text style={[styles.forgotPasswordText, { color: theme.orange, textAlign: 'right', fontWeight: 'bold', fontFamily: 'Inter-Bold' }]}>¿Has olvidado tu contraseña?</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={[styles.loginButton, { backgroundColor: theme.primary } ]} onPress={() => router.replace("/(tabs)/home") }>
-          <Text style={[styles.loginButtonText, { fontFamily: 'Inter-Bold' }]}>Iniciar sesión</Text>
+        <TouchableOpacity 
+          style={[styles.loginButton, { 
+            backgroundColor: isLoading ? theme.gray : (isFormValid ? theme.primary : theme.primary),
+            opacity: (isFormValid && !isLoading) ? 1 : 0.4
+          }]} 
+          onPress={handleLogin}
+          disabled={isLoading || !isFormValid}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={[styles.loginButtonText, { 
+              fontFamily: 'Inter-Bold',
+              color: 'white'
+            }]}>Iniciar sesión</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.separatorContainer}>
@@ -85,7 +160,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Continue with Google Button */}
-        <TouchableOpacity style={[styles.googleButton, { borderColor: theme.orange }]}>
+        <TouchableOpacity style={[styles.googleButton, { borderColor: theme.orange }]} disabled={isLoading}>
           <View style={styles.googleButtonContent}>
             <Svg height="20" width="20" viewBox="0 0 24 24" style={{ marginRight: 8 }}>
               <Path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -99,7 +174,7 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         {/* Join Meeting Button */}
-        <TouchableOpacity style={[styles.joinButton, { backgroundColor: theme.background, borderColor: theme.gray }]}>
+        <TouchableOpacity style={[styles.joinButton, { backgroundColor: theme.background, borderColor: theme.gray }]} disabled={isLoading}>
           <View style={styles.joinButtonContent}>
             <Feather name="calendar" size={20} color={theme.text} style={{ marginRight: 10 }} />
             <Text style={[styles.joinButtonText, { color: theme.text, fontFamily: 'Inter-Bold' }]}>Unirse a reunión con ID</Text>
@@ -110,7 +185,7 @@ export default function LoginScreen() {
           <Text style={[{ color: theme.text, fontFamily: 'Inter-Regular', fontSize: 14 }]}>
             ¿No tienes una cuenta?
           </Text>
-          <TouchableOpacity onPress={() => router.replace('/register')} style={{ marginLeft: 4 }}>
+          <TouchableOpacity onPress={() => router.replace('/register')} style={{ marginLeft: 4 }} disabled={isLoading}>
             <Text style={{ color: theme.orange, fontFamily: 'Inter-Bold', fontSize: 14 }}>
               Registrate ahora
             </Text>

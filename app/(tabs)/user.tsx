@@ -1,13 +1,15 @@
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
+import { useAuth } from '../auth/AuthProvider';
 
 export default function UserScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const { logout, user } = useAuth();
 
   const handleEditPress = () => {
     console.log('Edit Profile button pressed');
@@ -17,6 +19,31 @@ export default function UserScreen() {
   const handleEditProfilePicturePress = () => {
     console.log('Edit Profile Picture button pressed');
     // Logic for changing profile picture/header info
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro de que quieres cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              // Navigation will be handled automatically by AuthProvider
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo cerrar la sesión. Inténtalo de nuevo.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -30,8 +57,12 @@ export default function UserScreen() {
         />
         {/* Container for name and role */}
         <View style={styles.nameRoleContainer}>
-          <Text style={[styles.name, { color: theme.text }]}>Juan Código</Text>
-          <Text style={[styles.role, { color: theme.gray }]}>Desarrollador AliExpress</Text>
+          <Text style={[styles.name, { color: theme.text }]}>
+            {user ? `${user.nombre} ${user.apellidos}` : 'Juan Código'}
+          </Text>
+          <Text style={[styles.role, { color: theme.gray }]}>
+            {user ? user.email : 'Desarrollador AliExpress'}
+          </Text>
         </View>
         
         {/* Edit Profile Picture/Header Button (Restored) */}
@@ -89,12 +120,27 @@ export default function UserScreen() {
          <Text style={[styles.sectionTitle, { color: theme.text }]}>Información de Contacto</Text>
          <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.gray }]}>Correo</Text>
-            <Text style={[styles.infoValue, { color: theme.text }]}>juan@example.com</Text>
+            <Text style={[styles.infoValue, { color: theme.text }]}>
+              {user ? user.email : 'juan@example.com'}
+            </Text>
          </View>
          <View style={[styles.infoRow, { marginTop: 10 }]}> 
             <Text style={[styles.infoLabel, { color: theme.gray }]}>Miembro desde</Text>
-            <Text style={[styles.infoValue, { color: theme.text }]}>Febrero 2024</Text>
+            <Text style={[styles.infoValue, { color: theme.text }]}>
+              {user ? new Date(user.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }) : 'Febrero 2024'}
+            </Text>
          </View>
+       </View>
+
+       {/* Logout Button */}
+       <View style={[styles.sectionContainer, { backgroundColor: 'transparent' }]}>
+         <TouchableOpacity 
+           style={[styles.logoutButton, { backgroundColor: theme.red || '#FF4444' }]} 
+           onPress={handleLogout}
+         >
+           <Ionicons name="log-out-outline" size={20} color="white" style={{ marginRight: 10 }} />
+           <Text style={styles.logoutButtonText}>Cerrar Sesión</Text>
+         </TouchableOpacity>
        </View>
        </ScrollView>
     </SafeAreaView>
@@ -196,5 +242,19 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     padding: 5,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  logoutButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

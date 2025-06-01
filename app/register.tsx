@@ -2,15 +2,26 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Feather } from '@expo/vector-icons';
 import { Stack, router } from "expo-router";
 import { useState } from "react";
-import { Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Platform, KeyboardAvoidingView } from "react-native";
+import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
+import { useAuth } from './auth/AuthProvider';
 import PasswordStrengthBox from './PasswordStrengthBox';
 
 export default function RegisterScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
+  const { register, isLoading } = useAuth();
 
+  // Form state
+  const [nombre, setNombre] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Focus states
   const [nombreFocused, setNombreFocused] = useState(false);
   const [apellidosFocused, setApellidosFocused] = useState(false);
   const [correoFocused, setCorreoFocused] = useState(false);
@@ -18,8 +29,7 @@ export default function RegisterScreen() {
   const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [password, setPassword] = useState('');
+
   const [passwordCriteria, setPasswordCriteria] = useState({
     length: false,
     uppercase: false,
@@ -36,6 +46,63 @@ export default function RegisterScreen() {
     };
     setPasswordCriteria(criteria);
     setPassword(text);
+  };
+
+  const handleRegister = async () => {
+    // Basic validation
+    if (!nombre.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu nombre');
+      return;
+    }
+    if (!apellidos.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tus apellidos');
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu email');
+      return;
+    }
+    if (!password.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      return;
+    }
+    if (!confirmPassword.trim()) {
+      Alert.alert('Error', 'Por favor confirma tu contraseña');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
+
+    // Password strength validation
+    if (!passwordCriteria.length || !passwordCriteria.uppercase || !passwordCriteria.number || !passwordCriteria.symbol) {
+      Alert.alert('Error', 'La contraseña debe cumplir con todos los requisitos de seguridad');
+      return;
+    }
+
+    // Password confirmation validation
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+
+    // Terms validation
+    if (!termsAccepted) {
+      Alert.alert('Error', 'Debes aceptar los términos y condiciones');
+      return;
+    }
+
+    try {
+      await register(email.trim(), nombre.trim(), apellidos.trim(), password);
+      // On successful registration, show welcome toast
+      // The navigation will be handled automatically by the AuthProvider and _layout.tsx
+    } catch (error: any) {
+      Alert.alert('Error de registro', error.message);
+    }
   };
 
   const insets = useSafeAreaInsets();
@@ -57,16 +124,24 @@ export default function RegisterScreen() {
             style={[styles.input, { backgroundColor: colorScheme === 'dark' ? theme.inputBackground : theme.card, color: theme.text, borderColor: nombreFocused ? theme.orange : theme.gray }]}
             placeholder="Nombre"
             placeholderTextColor={theme.text + "80"}
+            value={nombre}
+            onChangeText={setNombre}
             onFocus={() => setNombreFocused(true)}
             onBlur={() => setNombreFocused(false)}
+            autoCapitalize="words"
+            editable={!isLoading}
           />
 
           <TextInput
             style={[styles.input, { backgroundColor: colorScheme === 'dark' ? theme.inputBackground : theme.card, color: theme.text, borderColor: apellidosFocused ? theme.orange : theme.gray }]}
             placeholder="Apellidos"
             placeholderTextColor={theme.text + "80"}
+            value={apellidos}
+            onChangeText={setApellidos}
             onFocus={() => setApellidosFocused(true)}
             onBlur={() => setApellidosFocused(false)}
+            autoCapitalize="words"
+            editable={!isLoading}
           />
 
           <View style={[styles.inputContainer, { borderColor: correoFocused ? theme.orange : theme.gray, backgroundColor: colorScheme === 'dark' ? theme.inputBackground : theme.card }]}>
@@ -74,8 +149,14 @@ export default function RegisterScreen() {
               style={[styles.inputInsideContainer, { color: theme.text }]}
               placeholder="Correo"
               placeholderTextColor={theme.text + "80"}
+              value={email}
+              onChangeText={setEmail}
               onFocus={() => setCorreoFocused(true)}
               onBlur={() => setCorreoFocused(false)}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!isLoading}
             />
           </View>
 
@@ -89,14 +170,17 @@ export default function RegisterScreen() {
                 style={[styles.inputInsideContainer, { color: theme.text }]}
                 placeholder="Contraseña"
                 placeholderTextColor={theme.text + "80"}
+                value={password}
                 secureTextEntry={!isPasswordVisible}
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
                 onChangeText={validatePassword}
+                editable={!isLoading}
               />
               <TouchableOpacity
                 style={styles.passwordVisibilityToggle}
                 onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                disabled={isLoading}
               >
                 <Feather
                   name={isPasswordVisible ? 'eye-off' : 'eye'}
@@ -116,13 +200,17 @@ export default function RegisterScreen() {
               style={[styles.inputInsideContainer, { color: theme.text }]}
               placeholder="Confirmar contraseña"
               placeholderTextColor={theme.text + "80"}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
               secureTextEntry={!isConfirmPasswordVisible}
               onFocus={() => setConfirmPasswordFocused(true)}
               onBlur={() => setConfirmPasswordFocused(false)}
+              editable={!isLoading}
             />
             <TouchableOpacity
               style={styles.passwordVisibilityToggle}
               onPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
+              disabled={isLoading}
             >
               <Feather
                 name={isConfirmPasswordVisible ? 'eye-off' : 'eye'}
@@ -134,15 +222,27 @@ export default function RegisterScreen() {
 
           {/* Checkbox */}
           <View style={styles.checkboxContainer}>
-            <TouchableOpacity style={[styles.checkbox, { borderColor: termsAccepted ? theme.orange : theme.gray, backgroundColor: termsAccepted ? theme.orange : 'transparent' }]} onPress={() => setTermsAccepted(!termsAccepted)}>
+            <TouchableOpacity 
+              style={[styles.checkbox, { borderColor: termsAccepted ? theme.orange : theme.gray, backgroundColor: termsAccepted ? theme.orange : 'transparent' }]} 
+              onPress={() => setTermsAccepted(!termsAccepted)}
+              disabled={isLoading}
+            >
               {termsAccepted && <Feather name="check" size={16} color="white" />}
             </TouchableOpacity>
             <Text style={[styles.checkboxLabel, { color: theme.text, fontFamily: 'Inter-Regular' }]}>Acepto los Términos y Condiciones y la Política de Privacidad</Text>
           </View>
 
           {/* Register Button */}
-          <TouchableOpacity style={[styles.registerButton, { backgroundColor: theme.primary }]} onPress={() => {}}>
-            <Text style={[styles.registerButtonText, { fontFamily: 'Inter-Bold' }]}>Registrarse</Text>
+          <TouchableOpacity 
+            style={[styles.registerButton, { backgroundColor: isLoading ? theme.gray : theme.primary }]} 
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={[styles.registerButtonText, { fontFamily: 'Inter-Bold' }]}>Registrarse</Text>
+            )}
           </TouchableOpacity>
 
           {/* Login Link */}
@@ -150,7 +250,7 @@ export default function RegisterScreen() {
             <Text style={[{ color: theme.text, fontFamily: 'Inter-Regular', fontSize: 14 }]}>
               ¿Ya tienes una cuenta?
             </Text>
-            <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginLeft: 4 }}>
+            <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginLeft: 4 }} disabled={isLoading}>
               <Text style={{ color: theme.orange, fontFamily: 'Inter-Bold', fontSize: 14 }}>
                 Inicia sesión
               </Text>
