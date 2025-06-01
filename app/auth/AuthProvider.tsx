@@ -12,6 +12,7 @@ interface AuthContextType {
   register: (email: string, nombre: string, apellidos: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean; // To indicate if the auth state is being loaded (e.g., from storage)
+  isAuthTransitioning: boolean; // To indicate if we're transitioning after successful auth
 }
 
 // Define a basic User interface based on the /auth/me response
@@ -40,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null); // Use User type
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start as true because we need to check storage
+  const [isAuthTransitioning, setIsAuthTransitioning] = useState(false); // New state for auth transitions
 
   // Function to fetch user details using the token
   const fetchUser = async (authToken: string) => {
@@ -95,7 +97,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Login function
   const login = async (email: string, password: string) => { // Added types
-    setIsLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/login`, { 
         email, 
@@ -104,12 +105,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       const { access_token } = response.data;
       
+      // Set transition loading before updating auth state
+      setIsAuthTransitioning(true);
+      
       // Store token and update state
       await AsyncStorage.setItem('access_token', access_token);
       setToken(access_token);
       
       // Fetch user data after successful login
       await fetchUser(access_token);
+      
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        setIsAuthTransitioning(false);
+      }, 500);
       
     } catch (error: any) {
       console.error('Login failed', error);
@@ -129,14 +138,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Generic error for network issues or other problems
       throw new Error('Login failed. Please check your connection and try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Register function
   const register = async (email: string, nombre: string, apellidos: string, password: string) => { // Added types
-    setIsLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/auth/register`, { 
         email, 
@@ -169,23 +175,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Generic error for network issues or other problems
       throw new Error('Registration failed. Please check your connection and try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 
   // Logout function
   const logout = async () => {
-    setIsLoading(true);
     try {
+      // Set transition loading before clearing auth state
+      setIsAuthTransitioning(true);
+      
       // Clear token from storage and state
       await AsyncStorage.removeItem('access_token');
       setToken(null);
       setUser(null);
+      
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        setIsAuthTransitioning(false);
+      }, 500);
+      
     } catch (error) {
       console.error('Logout failed', error);
-    } finally {
-       setIsLoading(false);
+      // Reset transition state even if logout fails
+      setIsAuthTransitioning(false);
     }
   };
 
@@ -197,6 +209,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     register,
     logout,
     isLoading,
+    isAuthTransitioning,
   };
 
   return (

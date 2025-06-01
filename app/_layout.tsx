@@ -43,10 +43,10 @@ export default function RootLayout() {
 
 // New component to handle conditional rendering based on auth state
 function LayoutContent({ theme }: { theme: any }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthTransitioning } = useAuth();
 
-  if (isLoading) {
-    // Show a loading indicator while the auth state is being determined
+  if (isLoading || isAuthTransitioning) {
+    // Show a loading indicator while the auth state is being determined or transitioning
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
         <ActivityIndicator size="large" color={theme.tint} />
