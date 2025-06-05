@@ -8,7 +8,6 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { ActivityIndicator, View } from 'react-native';
 import { Colors } from '@/constants/Colors'; // <--- importás tus colores
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Toast from 'react-native-toast-message';
 import { AuthProvider, useAuth } from './auth/AuthProvider'; // Import AuthProvider and useAuth
 
 export default function RootLayout() {
@@ -34,8 +33,6 @@ export default function RootLayout() {
         <AuthProvider>
           <LayoutContent theme={theme} />
         </AuthProvider>
-        {/* Add Toast at the root level */}
-        <Toast />
       </ThemeProvider>
     </GestureHandlerRootView>
   );

@@ -13,6 +13,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isLoading: boolean; // To indicate if the auth state is being loaded (e.g., from storage)
   isAuthTransitioning: boolean; // To indicate if we're transitioning after successful auth
+  justLoggedIn: boolean; // New state to indicate if a fresh login just occurred
+  setJustLoggedIn: React.Dispatch<React.SetStateAction<boolean>>; // Add setJustLoggedIn to context type
 }
 
 // Define a basic User interface based on the /auth/me response
@@ -42,6 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Start as true because we need to check storage
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false); // New state for auth transitions
+  const [justLoggedIn, setJustLoggedIn] = useState(false); // New state for fresh login
 
   // Function to fetch user details using the token
   const fetchUser = async (authToken: string) => {
@@ -114,7 +117,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       // Fetch user data after successful login
       await fetchUser(access_token);
-      
+
+      // Set justLoggedIn to true after successful login
+      setJustLoggedIn(true);
+
       // Small delay to ensure smooth transition
       setTimeout(() => {
         setIsAuthTransitioning(false);
@@ -210,6 +216,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
     isLoading,
     isAuthTransitioning,
+    justLoggedIn,
+    setJustLoggedIn, // Add setJustLoggedIn to context value
   };
 
   return (

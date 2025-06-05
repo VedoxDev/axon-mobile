@@ -1,13 +1,27 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from 'react-native';
+import { Text, ToastAndroid } from 'react-native';
 import { PlatformPressable } from '@react-navigation/elements'; // 👈 Aquí el fix elegante
+import { useEffect } from 'react';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '../auth/AuthProvider';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { user, justLoggedIn, setJustLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (user && justLoggedIn) {
+      ToastAndroid.showWithGravity(
+        `Bienvenido ${user.nombre}`,
+        ToastAndroid.SHORT,
+        ToastAndroid.BOTTOM,
+      );
+      setJustLoggedIn(false);
+    }
+  }, [user, justLoggedIn, setJustLoggedIn]);
 
   const activeTintColor =
     colorScheme === 'dark' ? Colors.dark.tint : Colors.light.tint;
@@ -30,11 +44,10 @@ export default function TabLayout() {
           borderTopWidth: 0,
           height: 65,
         },
-        // 👇 Esto aplica a todos los Tabs
         tabBarButton: (props) => (
           <PlatformPressable
             {...props}
-            android_ripple={{ color: 'transparent' }} // Desactiva ripple Android
+            android_ripple={{ color: 'transparent' }}
           />
         ),
       }}
