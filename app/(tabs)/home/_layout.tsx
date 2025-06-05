@@ -60,6 +60,9 @@ export default function HomeLayout() {
   const topButtonsTranslateY = useSharedValue(-20);
   const topButtonsOpacity = useSharedValue(0);
   const floatingSettingsOpacity = useSharedValue(0);
+  const projectGridScrollHeight = useSharedValue(0);
+  const collapsedScrollHeight = useSharedValue(300); // Initial height for collapsed state
+  const projectDetailsContainerHeight = useSharedValue(0);
 
   useEffect(() => {
     if (selectedProject) {
@@ -69,16 +72,28 @@ export default function HomeLayout() {
       topButtonsTranslateY.value = withTiming(0, { duration: 300 });
       topButtonsOpacity.value = withTiming(1, { duration: 300 });
       floatingSettingsOpacity.value = withTiming(0, { duration: 200 });
+      projectGridScrollHeight.value = withTiming(PROJECT_GRID_MAX_HEIGHT, { duration: 250 });
+      collapsedScrollHeight.value = withTiming(0, { duration: 200 });
+      projectDetailsContainerHeight.value = withTiming(PROJECT_DETAILS_HEIGHT, { duration: 300 });
       setTimeout(() => setIsAnimating(false), 350);
     } else {
       setIsAnimating(true);
-      sidebarWidth.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
-      contentTranslate.value = withTiming(SIDEBAR_WIDTH, { duration: 350 });
-      topButtonsTranslateY.value = withTiming(-20, { duration: 300 });
-      topButtonsOpacity.value = withTiming(0, { duration: 300 });
+      // Start ScrollView height animations immediately and faster
+      projectGridScrollHeight.value = withTiming(0, { duration: 150 });
+      collapsedScrollHeight.value = withTiming(300, { duration: 200 });
+      projectDetailsContainerHeight.value = withTiming(0, { duration: 200 });
+      
+      // Start sidebar collapse after a short delay
+      setTimeout(() => {
+        sidebarWidth.value = withTiming(SIDEBAR_WIDTH, { duration: 300 });
+        contentTranslate.value = withTiming(SIDEBAR_WIDTH, { duration: 300 });
+        topButtonsTranslateY.value = withTiming(-20, { duration: 250 });
+        topButtonsOpacity.value = withTiming(0, { duration: 250 });
+      }, 50);
+      
       setTimeout(() => {
         floatingSettingsOpacity.value = withTiming(1, { duration: 200 });
-      }, 150);
+      }, 200);
       setTimeout(() => setIsAnimating(false), 350);
     }
   }, [selectedProject]);
@@ -130,6 +145,21 @@ export default function HomeLayout() {
     opacity: floatingSettingsOpacity.value,
   }));
 
+  const projectGridScrollAnimStyle = useAnimatedStyle(() => ({
+    height: projectGridScrollHeight.value,
+    opacity: projectGridScrollHeight.value > 50 ? 1 : 0,
+  }));
+
+  const collapsedScrollAnimStyle = useAnimatedStyle(() => ({
+    height: collapsedScrollHeight.value,
+    opacity: collapsedScrollHeight.value > 50 ? 1 : 0,
+  }));
+
+  const projectDetailsContainerAnimStyle = useAnimatedStyle(() => ({
+    height: projectDetailsContainerHeight.value,
+    opacity: projectDetailsContainerHeight.value > 50 ? 1 : 0,
+  }));
+
   const showSidebar = !pathname.startsWith('/(tabs)/chat/');
 
   const toggleSidebar = () => {
@@ -154,7 +184,7 @@ export default function HomeLayout() {
             { 
               backgroundColor: colorScheme === 'dark' ? theme.background : theme.card,
               paddingTop: insets.top, 
-              paddingBottom: selectedProject ? 0 : insets.bottom,
+              paddingBottom: 0,
             },
             sidebarAnimStyle,
           ]}
@@ -178,8 +208,8 @@ export default function HomeLayout() {
               <Animated.View style={[projectsTitleAnimStyle, { width: '100%', alignItems: 'flex-start' }]}>
                 <Text style={[styles.projectsTitle, { color: theme.text, textAlign: 'left', paddingLeft: 0 }]}>Tus proyectos</Text>
               </Animated.View>
-              <ScrollView 
-                style={styles.projectGridScrollView}
+              <Animated.ScrollView 
+                style={[styles.projectGridScrollView, projectGridScrollAnimStyle]}
                 contentContainerStyle={styles.projectGridScrollContent}
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled={true}
@@ -230,7 +260,7 @@ export default function HomeLayout() {
                     </>
                   )}
                 </View>
-              </ScrollView>
+              </Animated.ScrollView>
             </>
           ) : (
             <>
@@ -241,8 +271,8 @@ export default function HomeLayout() {
                 <Ionicons name="chatbubble" size={24} color="#fff" />
               </TouchableOpacity>
               <View style={[styles.separator, { backgroundColor: theme.separator }]} />
-              <ScrollView 
-                style={styles.collapsedSidebarScrollView}
+              <Animated.ScrollView 
+                style={[styles.collapsedSidebarScrollView, collapsedScrollAnimStyle]}
                 contentContainerStyle={styles.collapsedSidebarScrollContent}
                 showsVerticalScrollIndicator={false}
               >
@@ -279,12 +309,13 @@ export default function HomeLayout() {
                 >
                   <Ionicons name="settings-outline" size={24} color={theme.settingsIcon} />
                 </TouchableOpacity>
-              </ScrollView>
+              </Animated.ScrollView>
             </>
           )}
 
-          {showProjectDetailsCard && (
-            <Animated.View style={[styles.projectDetailsCard, { backgroundColor: theme.inputBackground }, projectDetailsAnimStyle]}> 
+          <Animated.View style={[projectDetailsContainerAnimStyle, { overflow: 'hidden' }]}>
+            {showProjectDetailsCard && (
+              <Animated.View style={[styles.projectDetailsCard, { backgroundColor: theme.inputBackground }, projectDetailsAnimStyle]}> 
               <ScrollView 
                 style={styles.projectDetailsScrollView}
                 contentContainerStyle={styles.projectDetailsScrollContent}
@@ -367,7 +398,8 @@ export default function HomeLayout() {
                 </View>
               </ScrollView>
             </Animated.View>
-          )}
+            )}
+          </Animated.View>
         </Animated.View>
       )}
 
@@ -450,13 +482,13 @@ const styles = StyleSheet.create({
   projectDetailsCard: {
     height: PROJECT_DETAILS_HEIGHT,
     borderRadius: 18,
-    margin: 10,
     padding: 16,
     elevation: 2,
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
-    marginVertical: 0,
+    marginTop: 0,
+    marginBottom: 0,
     marginHorizontal: 3,
     borderBottomWidth: 0,
     borderBottomLeftRadius: 0,
