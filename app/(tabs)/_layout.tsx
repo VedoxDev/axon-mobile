@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text, ToastAndroid } from 'react-native';
 import { PlatformPressable } from '@react-navigation/elements'; // 👈 Aquí el fix elegante
 import { useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
@@ -11,6 +12,7 @@ import { useAuth } from '../auth/AuthProvider';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user, justLoggedIn, setJustLoggedIn } = useAuth();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (user && justLoggedIn) {
@@ -42,7 +44,9 @@ export default function TabLayout() {
               ? Colors.dark.background
               : Colors.light.background,
           borderTopWidth: 0,
-          height: 65,
+          height: 65 + Math.max(insets.bottom - 15, 0),
+          paddingBottom: Math.max(insets.bottom - 15, 15),
+          paddingTop: 8,
         },
         tabBarButton: (props) => (
           <PlatformPressable
