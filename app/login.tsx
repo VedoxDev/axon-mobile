@@ -54,13 +54,6 @@ export default function LoginScreen() {
     try {
       await login(email.trim(), password);
       // On successful login, the navigation will be handled automatically by the AuthProvider and _layout.tsx
-      
-      // TODO: Add toast notification (now handled in _layout.tsx)
-      // ToastAndroid.showWithGravity(
-      //   `Bienvenido ${user?.nombre}`,
-      //   ToastAndroid.SHORT,
-      //   ToastAndroid.BOTTOM,
-      // );
     } catch (error: any) {
       // Clear password field on login error
       setPassword('');

@@ -3,24 +3,34 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-na
 import { useEffect } from 'react';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-
-interface Project {
-  id: string;
-  name: string;
-  color: string;
-}
+import { Project } from '@/services/projectService';
 
 interface AnimatedProjectButtonProps {
   project: Project;
   selectedProject: Project | null;
   setSelectedProject: (project: Project | null) => void;
+  index: number;
+  projectsPerRow: number;
+  buttonWidth: number;
+  buttonSpacing: number;
 }
 
-export default function AnimatedProjectButton({ project, selectedProject, setSelectedProject }: AnimatedProjectButtonProps) {
+export default function AnimatedProjectButton({ 
+  project, 
+  selectedProject, 
+  setSelectedProject, 
+  index, 
+  projectsPerRow, 
+  buttonWidth, 
+  buttonSpacing 
+}: AnimatedProjectButtonProps) {
   const isSelected = selectedProject?.id === project.id;
   const borderRadius = useSharedValue(isSelected ? 8 : 24);
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  
+  // Check if this is the last item in the row
+  const isLastInRow = (index + 1) % projectsPerRow === 0;
 
   useEffect(() => {
     borderRadius.value = withTiming(isSelected ? 8 : 24, { duration: 300 });
@@ -30,8 +40,24 @@ export default function AnimatedProjectButton({ project, selectedProject, setSel
     borderRadius: borderRadius.value,
   }));
 
+  const buttonStyle = {
+    width: buttonWidth,
+    height: buttonWidth,
+    marginRight: isLastInRow ? 0 : buttonSpacing,
+    marginBottom: 15,
+  };
+
   return (
-    <Animated.View style={[styles.projectGridButton, animatedStyle, { backgroundColor: project.color, borderWidth: isSelected ? 2 : 0, borderColor: theme.primary }]}>
+    <Animated.View style={[
+      styles.projectGridButton, 
+      buttonStyle,
+      animatedStyle, 
+      { 
+        backgroundColor: project.color, 
+        borderWidth: isSelected ? 2 : 0, 
+        borderColor: theme.primary 
+      }
+    ]}>
       <TouchableOpacity
         style={[styles.projectInnerButton]}
         onPress={() => setSelectedProject(project)}
@@ -44,11 +70,8 @@ export default function AnimatedProjectButton({ project, selectedProject, setSel
 
 const styles = StyleSheet.create({
   projectGridButton: {
-    width: 48,
-    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 4,
   },
   projectInnerButton: {
     width: '100%',
