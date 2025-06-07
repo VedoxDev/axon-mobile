@@ -251,13 +251,7 @@ export default function AddMembersScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
         <TouchableOpacity 
-          onPress={() => router.replace({
-            pathname: './newProject',
-            params: { 
-              projectName: projectName,
-              projectDescription: projectDescription
-            }
-          })} 
+          onPress={() => router.back()} 
           style={[styles.backButton, { backgroundColor: theme.primary }]} 
           disabled={isCreatingProject}
         >

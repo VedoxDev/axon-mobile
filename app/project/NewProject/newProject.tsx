@@ -26,7 +26,7 @@ export default function NewProjectScreen() {
     }
 
     // Navigate to the team members screen with the project data (no API call yet)
-    router.replace({
+    router.push({
       pathname: './addMembers',
       params: { 
         projectName: projectName.trim(),
