@@ -1,14 +1,13 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ScrollView, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ActivityIndicator, Alert } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useIsFocused } from '@react-navigation/native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { useState, useEffect, useRef } from 'react';
-
-const projectName = 'My Space App';
+import { SectionService, Section, generateSectionColor } from '@/services/sectionService';
 
 // Define types for our task board
 type Task = {
@@ -41,54 +40,137 @@ type Column = {
   title: string;
   tasks: Task[];
   color: string;
+  sectionId: number; // To keep track of the API section ID
+  order: number;
 };
-
-// Temporary data for demonstration
-const initialColumns: Column[] = [
-  {
-    id: 'assigned',
-    title: 'Asignado',
-    color: '#42A5F5',
-    tasks: [
-      {
-        id: '1',
-        title: '[Hero Section] - Tamaño del hero',
-        description: 'Ajustar el tamaño del hero section para que sea más impactante y responsivo en diferentes dispositivos.',
-        assignee: 'Juan',
-      },
-      { id: '2', title: 'Revisar código', description: 'Code review del PR #123', assignee: 'María' },
-    ],
-  },
-  {
-    id: 'in-progress',
-    title: 'En proceso',
-    color: '#FFB74D',
-    tasks: [
-      { id: '3', title: 'Implementar API', description: 'Desarrollar endpoints para usuarios', assignee: 'Carlos' },
-      { id: '4', title: 'Revisar el footer', description: 'Se jodio el footer, se fue a la verga', assignee: 'Victor' },
-    ],
-  },
-  {
-    id: 'completed',
-    title: 'Terminado',
-    color: '#4CAF50',
-    tasks: [
-      { id: '5', title: 'Testing', description: 'Pruebas unitarias completadas', assignee: 'Ana' },
-      { id: '6', title: 'Prueba Unitaria del diseño de gráfica', description: 'Pruebas unitarias completadas', assignee: 'María' },
-    ],
-  },
-];
 
 export default function TaskScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const [columns, setColumns] = useState(initialColumns);
+  const { projectId, projectName } = useLocalSearchParams<{ projectId: string; projectName: string }>();
+  
+  const [columns, setColumns] = useState<Column[]>([]);
   const [isModalActive, setIsModalActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const isFocused = useIsFocused();
+
+  // Fetch sections when component mounts, projectId changes, or screen comes into focus
+  useEffect(() => {
+    if (projectId && isFocused) {
+      fetchSections();
+    }
+  }, [projectId, isFocused]);
+
+  const fetchSections = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const sections = await SectionService.getSections(projectId);
+      
+      // Transform sections to columns format with empty tasks for now
+      const transformedColumns: Column[] = sections.map((section: Section, index: number) => ({
+        id: `section-${section.id}`,
+        sectionId: section.id,
+        title: section.name,
+        order: section.order,
+        color: generateSectionColor(section.id, index),
+        tasks: [] // We'll add tasks later when we integrate the tasks API
+      }));
+      
+      setColumns(transformedColumns);
+    } catch (err: any) {
+      console.error('Failed to fetch sections:', err);
+      setError(err.message || 'Failed to load sections');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+
+  // Delete section
+  const handleDeleteSection = (sectionId: number, sectionName: string) => {
+    Alert.alert(
+      'Delete Section',
+      `Are you sure you want to delete "${sectionName}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsDeleting(true);
+              await SectionService.deleteSection(projectId, sectionId);
+
+              // Remove from local state
+              setColumns(prevColumns =>
+                prevColumns.filter(col => col.sectionId !== sectionId)
+              );
+            } catch (err: any) {
+              console.error('Failed to delete section:', err);
+              Alert.alert('Error', err.message || 'Failed to delete section');
+            } finally {
+              setIsDeleting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // Handle section reordering
+  const handleSectionDragEnd = async ({ data }: { data: Column[] }) => {
+    console.log('Starting section reorder...');
+    console.log('Original columns:', columns.map(col => ({ id: col.sectionId, name: col.title, order: col.order })));
+    console.log('New order data:', data.map(col => ({ id: col.sectionId, name: col.title, order: col.order })));
+
+    // Update local state immediately for smooth UX
+    setColumns(data);
+
+    try {
+      // Extract section IDs in new order - ensure they are numbers
+      const sectionIds = data.map(col => {
+        const id = typeof col.sectionId === 'string' ? parseInt(col.sectionId, 10) : col.sectionId;
+        return id;
+      });
+      
+      console.log('Sending reorder request with sectionIds:', sectionIds);
+      console.log('sectionIds types:', sectionIds.map(id => typeof id));
+      
+      // Validate that all IDs are valid numbers
+      const invalidIds = sectionIds.filter(id => isNaN(id) || id <= 0);
+      if (invalidIds.length > 0) {
+        console.error('Invalid section IDs found:', invalidIds);
+        throw new Error('Invalid section IDs detected');
+      }
+      
+      // Ensure we have the same number of sections
+      if (sectionIds.length !== columns.length) {
+        console.error('Section count mismatch:', {
+          original: columns.length,
+          reordered: sectionIds.length
+        });
+        throw new Error('Section count mismatch');
+      }
+      
+      // Call API to persist the new order
+      await SectionService.reorderSections(projectId, sectionIds);
+      console.log('Reorder success!');
+    } catch (err: any) {
+      console.error('Failed to reorder sections:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      Alert.alert('Error', 'Failed to save section order. Please try again.');
+      // Refresh sections to restore original order
+      fetchSections();
+    }
+  };
 
   useEffect(() => {
     if (isModalActive) {
@@ -150,17 +232,53 @@ export default function TaskScreen() {
     </TouchableOpacity>
   );
 
-  const renderColumn = (column: Column) => (
-    <View
-      key={column.id}
+  const renderColumn = ({ item: column, drag, isActive }: RenderItemParams<Column>) => (
+    <TouchableOpacity
+      onLongPress={drag}
+      disabled={isActive}
       style={[
         styles.column,
         {
           backgroundColor: column.color,
+          opacity: isActive ? 0.8 : 1,
         },
       ]}
     >
-      <Text style={[styles.columnTitle, { color: '#FFFFFF' }]}>{column.title}</Text>
+      <View style={styles.columnHeader}>
+        <Text style={[styles.columnTitle, { color: '#FFFFFF' }]}>{column.title}</Text>
+        <TouchableOpacity
+          style={styles.columnMenu}
+          onPress={() => {
+            Alert.alert(
+              column.title,
+              'What would you like to do?',
+              [
+                {
+                  text: 'Rename',
+                  onPress: () => {
+                    router.push({
+                      pathname: '/project/Task/editSectionModal',
+                      params: {
+                        projectId,
+                        sectionId: column.sectionId.toString(),
+                        sectionName: column.title
+                      }
+                    });
+                  }
+                },
+                {
+                  text: 'Delete',
+                  style: 'destructive',
+                  onPress: () => handleDeleteSection(column.sectionId, column.title)
+                },
+                { text: 'Cancel', style: 'cancel' }
+              ]
+            );
+          }}
+        >
+          <Ionicons name="ellipsis-vertical" size={20} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
       <DraggableFlatList
         data={column.tasks}
         renderItem={renderTaskCard}
@@ -179,8 +297,59 @@ export default function TaskScreen() {
       >
         <Text style={[styles.addCardText, { color: column.color }]}>+ Añade una tarjeta</Text>
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
+
+  if (!projectId) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={styles.errorContainer}>
+          <Text style={[styles.errorText, { color: theme.text }]}>
+            No project selected. Please go back and select a project.
+          </Text>
+          <TouchableOpacity onPress={() => router.back()} style={styles.errorButton}>
+            <Text style={styles.errorButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.projectTitle}>{projectName || 'Loading...'}</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={theme.primary} />
+          <Text style={[styles.loadingText, { color: theme.text }]}>Loading sections...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.projectTitle}>{projectName || 'Error'}</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
+          <TouchableOpacity onPress={fetchSections} style={styles.errorButton}>
+            <Text style={styles.errorButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
@@ -196,20 +365,48 @@ export default function TaskScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.projectTitle}>{projectName}</Text>
+        <Text style={styles.projectTitle}>{projectName || 'Tasks'}</Text>
+        <TouchableOpacity 
+          style={styles.addSectionButton}
+          onPress={() => {
+            router.push({
+              pathname: '/project/Task/createSectionModal',
+              params: { projectId }
+            });
+          }}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.boardScrollContainer}
-        pagingEnabled={false}
-        decelerationRate="fast"
-        snapToInterval={316}
-        snapToAlignment="start"
-      >
-        {columns.map(renderColumn)}
-      </ScrollView>
+      {columns.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: theme.text }]}>
+            No sections yet. Create your first section to start organizing tasks.
+          </Text>
+          <TouchableOpacity 
+            style={[styles.createSectionButton, { backgroundColor: theme.primary }]}
+            onPress={() => {
+              router.push({
+                pathname: '/project/Task/createSectionModal',
+                params: { projectId }
+              });
+            }}
+          >
+            <Text style={styles.createSectionButtonText}>Create Section</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <DraggableFlatList
+          data={columns}
+          renderItem={renderColumn}
+          keyExtractor={(item) => item.id}
+          onDragEnd={handleSectionDragEnd}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.boardScrollContainer}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -226,10 +423,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
+    paddingHorizontal: 16,
   },
   backButton: {
     marginRight: 16,
-    marginLeft: 16,
     backgroundColor: '#42A5F5',
     borderRadius: 20,
     padding: 6,
@@ -238,6 +435,12 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#fff',
+    flex: 1,
+  },
+  addSectionButton: {
+    backgroundColor: '#42A5F5',
+    borderRadius: 20,
+    padding: 6,
   },
   boardScrollContainer: {
     padding: 16,
@@ -250,10 +453,19 @@ const styles = StyleSheet.create({
     marginRight: 16,
     maxHeight: '90%',
   },
+  columnHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   columnTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 16,
+    flex: 1,
+  },
+  columnMenu: {
+    padding: 4,
   },
   taskList: {
     paddingBottom: 8,
@@ -299,126 +511,56 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  modal: {
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    borderWidth: 4,
-    minHeight: 500,
-    maxHeight: 700,
-    marginLeft: 375,
-    marginTop: 500,
-    width: 375,
-    overflow: 'hidden',
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    padding: 20,
   },
-  closeButton: {
-    padding: 8,
-  },
-  statusTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  statusText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  modalBody: {
-    padding: 16,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
     marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
+  errorButton: {
+    backgroundColor: '#42A5F5',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  errorButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
   },
-  membersSection: {
-    marginBottom: 24,
-  },
-  membersList: {
-    flexDirection: 'row',
-  },
-  memberAvatar: {
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginBottom: 4,
-  },
-  memberName: {
-    fontSize: 12,
-  },
-  dueDateSection: {
-    marginBottom: 24,
-  },
-  dueDateContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dueDate: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  deadlineType: {
-    fontSize: 14,
-  },
-  descriptionSection: {
-    marginBottom: 24,
-  },
-  description: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  commentsSection: {
-    marginBottom: 24,
-  },
-  comment: {
-    flexDirection: 'row',
-    marginBottom: 16,
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  commentContent: {
+  emptyContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
+  emptyText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  commentUser: {
-    fontSize: 14,
+  createSectionButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  createSectionButtonText: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
-  },
-  commentTime: {
-    fontSize: 12,
-  },
-  commentMessage: {
-    fontSize: 14,
-    lineHeight: 20,
   },
 }); 

@@ -10,6 +10,16 @@ export default function Layout() {
         animation: 'slide_from_bottom',
         headerShown: false,
       }} />
+      <Stack.Screen name="createSectionModal" options={{
+        presentation: 'transparentModal',
+        animation: 'fade',
+        headerShown: false,
+      }} />
+      <Stack.Screen name="editSectionModal" options={{
+        presentation: 'transparentModal',
+        animation: 'fade',
+        headerShown: false,
+      }} />
     </Stack>
   );
 } 

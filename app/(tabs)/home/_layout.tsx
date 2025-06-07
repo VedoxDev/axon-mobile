@@ -372,7 +372,17 @@ export default function HomeLayout() {
                 <View style={styles.projectTabs}>
                   <TouchableOpacity 
                     style={styles.tabItem}
-                    onPress={() => router.push('/project/Task/taskScreen')}
+                    onPress={() => {
+                      if (selectedProject) {
+                        router.push({
+                          pathname: '/project/Task/taskScreen',
+                          params: {
+                            projectId: selectedProject.id,
+                            projectName: selectedProject.name
+                          }
+                        });
+                      }
+                    }}
                   >
                     <Ionicons name="checkmark-circle" size={18} color={theme.text} style={styles.tabIcon} />
                     <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
