@@ -166,9 +166,22 @@ export default function CalendarScreen() {
   const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   const changeMonth = (increment: number) => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonthIndex = today.getMonth();
+    
+    // Calculate the limits
+    const minDate = new Date(currentYear, currentMonthIndex - 2, 1); // 2 months before
+    const maxDate = new Date(currentYear, currentMonthIndex + 3, 1); // 3 months ahead
+    
     const newMonth = new Date(currentMonth);
     newMonth.setMonth(newMonth.getMonth() + increment);
-    setCurrentMonth(newMonth);
+    
+    // Check if the new month is within the allowed range
+    if (newMonth >= minDate && newMonth < maxDate) {
+      setCurrentMonth(newMonth);
+    }
+    // If outside the range, the calendar refuses to change (no action taken)
   };
 
   const renderEventDot = (events: Event[]) => {
@@ -231,31 +244,36 @@ export default function CalendarScreen() {
       </View>
 
       <View style={styles.calendarGrid}>
-        {days.map((day, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.dayCell,
-              {
-                backgroundColor: day.isToday ? theme.inputBackground : 'transparent',
-                opacity: day.isCurrentMonth ? 1 : 0.5,
-              },
-            ]}
-            onPress={() => setSelectedDate(day.date)}
-          >
-            <Text
+        {days.map((day, index) => {
+          const isSelected = day.date.toDateString() === selectedDate.toDateString();
+          return (
+            <TouchableOpacity
+              key={index}
               style={[
-                styles.dayNumber,
+                styles.dayCell,
                 {
-                  color: day.isToday ? '#fff' : theme.text,
+                  backgroundColor: day.isToday ? theme.inputBackground : 'transparent',
+                  opacity: day.isCurrentMonth ? 1 : 0.5,
+                  borderColor: isSelected ? '#42A5F5' : 'transparent',
+                  borderWidth: isSelected ? 2 : 1,
                 },
               ]}
+              onPress={() => setSelectedDate(day.date)}
             >
-              {day.date.getDate()}
-            </Text>
-            {renderEventDot(day.events)}
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.dayNumber,
+                  {
+                    color: day.isToday ? '#fff' : theme.text,
+                  },
+                ]}
+              >
+                {day.date.getDate()}
+              </Text>
+              {renderEventDot(day.events)}
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={[styles.eventsSection, { backgroundColor: theme.card, borderColor: theme.gray }]}>

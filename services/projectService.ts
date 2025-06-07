@@ -29,6 +29,19 @@ export interface Project extends ProjectResponse {
   color: string; // Generated color for UI
 }
 
+// Invitation request interface
+export interface InviteUserRequest {
+  userId?: string; // The UUID of the user to invite (optional if email is provided)
+  email?: string; // The email of the user to invite (optional if userId is provided)
+}
+
+// Invitation response interface
+export interface InviteUserResponse {
+  message: string; // Success message, e.g., "invitation-sent-successfully"
+  invitationId: string; // The UUID of the invitation
+  userId: string; // The UUID of the invited user
+}
+
 // Project service class to handle all project-related API calls
 export class ProjectService {
   // Get all projects for the authenticated user
@@ -97,6 +110,46 @@ export class ProjectService {
       
       // Generic error for network issues or other problems
       throw new Error('Failed to create project. Please check your connection and try again.');
+    }
+  }
+
+  // Invite a user to a project
+  static async inviteUserToProject(projectId: string, inviteData: InviteUserRequest): Promise<InviteUserResponse> {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/projects/${projectId}/invite`, inviteData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to invite user to project', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 400) {
+        throw new Error('Invalid invitation data. Please check the user information.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to invite users to this project.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Project or user not found.');
+      } else if (error.response?.status === 409) {
+        throw new Error('User is already a member of this project.');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error. Please try again later.');
+      }
+      
+      // Generic error for network issues or other problems
+      throw new Error('Failed to send invitation. Please check your connection and try again.');
     }
   }
 }
