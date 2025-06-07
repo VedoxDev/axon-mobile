@@ -11,6 +11,7 @@ import AnimatedProjectButton from '@/components/AnimatedProjectButton';
 import { Project } from '@/services/projectService';
 import { useProjectContext } from '@/contexts/ProjectContext';
 
+
 const SIDEBAR_WIDTH = 70;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const EXPANDED_WIDTH = SCREEN_WIDTH;
@@ -343,6 +344,29 @@ export default function HomeLayout() {
                   </View>
                 </View>
 
+                {/* Invite Members Button - Only show for admin/owner roles */}
+                {selectedProject?.role && selectedProject.role !== 'member' && (
+                  <TouchableOpacity 
+                    style={[styles.inviteMembersButton, { backgroundColor: theme.primary + '15', borderColor: theme.primary }]}
+                    onPress={() => {
+                      if (selectedProject) {
+                        router.push({
+                          pathname: '/project/InviteMembers/inviteMembers',
+                          params: {
+                            projectId: selectedProject.id,
+                            projectName: selectedProject.name
+                          }
+                        });
+                      }
+                    }}
+                  >
+                    <Ionicons name="person-add" size={16} color={theme.primary} />
+                    <Text style={[styles.inviteMembersText, { color: theme.primary }]}>
+                      Invitar Miembros
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 {/* Members Section */}
 
                 <View style={styles.projectTabs}>
@@ -412,6 +436,7 @@ export default function HomeLayout() {
       >
         <Slot />
       </Animated.View>
+
 
 
     </View>
@@ -705,5 +730,19 @@ const styles = StyleSheet.create({
   collapsedSidebarScrollContent: {
     alignItems: 'center',
     paddingBottom: 10,
+  },
+  inviteMembersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+    gap: 6,
+  },
+  inviteMembersText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
