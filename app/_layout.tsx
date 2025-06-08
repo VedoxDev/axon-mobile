@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
@@ -12,6 +12,9 @@ import { AuthProvider, useAuth } from './auth/AuthProvider'; // Import AuthProvi
 import { ProjectProvider } from '@/contexts/ProjectContext'; // Import ProjectProvider
 import { UserProvider } from '@/contexts/UserContext'; // Import UserProvider
 
+// LiveKit initialization - commented out for now to fix WebRTC issues
+// import { registerGlobals, AudioSession } from '@livekit/react-native';
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
@@ -23,6 +26,26 @@ export default function RootLayout() {
     'Inter-Bold': require('../assets/fonts/Inter-Bold.ttf'),
     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
   });
+
+  // Initialize LiveKit - commented out for now to fix WebRTC issues
+  // useEffect(() => {
+  //   registerGlobals();
+    
+  //   const initAudio = async () => {
+  //     try {
+  //       await AudioSession.startAudioSession();
+  //       console.log('✅ LiveKit audio session started');
+  //     } catch (error) {
+  //       console.error('❌ Failed to start LiveKit audio session:', error);
+  //     }
+  //   };
+
+  //   initAudio();
+
+  //   return () => {
+  //     AudioSession.stopAudioSession();
+  //   };
+  // }, []);
 
   if (!loaded) {
     return null;
@@ -66,6 +89,7 @@ function LayoutContent({ theme }: { theme: any }) {
         <StatusBar style="auto" />
         <Stack screenOptions={{ headerShown: false }} initialRouteName="(tabs)">
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="call/[callId]" options={{ headerShown: false }} />
         </Stack>
       </View>
     );

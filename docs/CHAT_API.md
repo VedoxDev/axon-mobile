@@ -21,9 +21,13 @@ The Chat system supports both **1:1 direct messages** and **project group conver
 ```javascript
 import { io } from 'socket.io-client';
 
+// Get token from AsyncStorage (React Native) or localStorage (web)
+const token = await AsyncStorage.getItem('access_token'); // React Native
+// const token = localStorage.getItem('access_token'); // Web
+
 const socket = io('http://localhost:3000/chat', {
   auth: {
-    token: 'your-jwt-token'
+    token: token // JWT token without 'Bearer ' prefix
   }
 });
 
@@ -34,6 +38,12 @@ socket.on('connect', () => {
 
 socket.on('disconnect', () => {
   console.log('Disconnected from chat');
+});
+
+// Error handling
+socket.on('connect_error', (error) => {
+  console.error('Connection failed:', error.message);
+  // Token might be invalid or expired
 });
 ```
 
@@ -185,6 +195,22 @@ Authorization: Bearer <jwt-token>
 GET /chat/direct/{userId}?page=1&limit=50
 Authorization: Bearer <jwt-token>
 ```
+
+### Mark Direct Conversation as Read
+```http
+PUT /chat/direct/{userId}/read
+Authorization: Bearer <jwt-token>
+```
+
+**Response:**
+```json
+{
+  "message": "messages-marked-as-read",
+  "markedCount": 5
+}
+```
+
+**Important:** Only marks as read messages **sent TO you** from that user, NOT your outgoing messages.
 
 ### Get Project Message History
 ```http
@@ -435,6 +461,63 @@ async function loadMessageHistory(type, id, page = 1) {
 }
 ```
 
+### Mark Conversation as Read (Clear Unread Dots)
+```javascript
+async function openDirectChat(userId) {
+  const token = localStorage.getItem('jwt-token');
+  
+  try {
+    // 1. Load message history
+    await loadMessageHistory('direct', userId);
+    
+    // 2. Mark all incoming messages as read (clears unread dots)
+    const response = await fetch(`/chat/direct/${userId}/read`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const result = await response.json();
+    console.log(`Marked ${result.markedCount} messages as read`);
+    
+    // 3. Update UI - remove unread indicators
+    updateChatUIAsRead(userId);
+    
+  } catch (error) {
+    console.error('Failed to open chat:', error);
+  }
+}
+
+// React Native example
+async function openDirectChatRN(userId) {
+  const token = await AsyncStorage.getItem('access_token');
+  
+  try {
+    // Mark conversation as read when opening chat
+    const response = await fetch(`${API_BASE_URL}/chat/direct/${userId}/read`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      console.log(`✅ Marked ${result.markedCount} messages as read`);
+      
+      // Update state to remove unread indicators
+      setUnreadCounts(prev => ({
+        ...prev,
+        [userId]: 0 // Clear unread count for this user
+      }));
+    }
+  } catch (error) {
+    console.error('Failed to mark messages as read:', error);
+  }
+}
+```
+
 ---
 
 ## 🔒 Security & Permissions
@@ -487,4 +570,55 @@ socket.on('taskStatusChanged', (data) => {
 - ✅ **Message editing** - Update sent messages
 - ✅ **Fallback REST** - Works even without WebSocket
 
-Perfect for team collaboration! 🎉 
+Perfect for team collaboration! 🎉
+
+---
+
+## 🔧 Troubleshooting
+
+### "cannot-message-yourself" Error
+This error occurs when the JWT token contains the wrong user ID. **Solution:**
+
+1. **Check JWT Token**: Verify the token contains the correct user ID
+```javascript
+// Decode JWT to check payload (client-side debugging)
+const payload = JSON.parse(atob(token.split('.')[1]));
+console.log('JWT payload:', payload); // Should show correct user ID
+```
+
+2. **Re-login**: If token is corrupted, have user login again
+```javascript
+// Clear bad token and redirect to login
+await AsyncStorage.removeItem('access_token');
+// Navigate to login screen
+```
+
+3. **Backend Logs**: Check server logs for detailed error info
+```bash
+# Look for these log messages:
+[ChatService] Creating message from user X to Y
+[ChatService] ERROR: User X tried to message themselves
+```
+
+### WebSocket Connection Issues
+```javascript
+socket.on('connect_error', (error) => {
+  console.log('Connection error:', error.message);
+  
+  if (error.message.includes('Authentication')) {
+    // Token invalid - redirect to login
+    await AsyncStorage.removeItem('access_token');
+    // Navigate to login
+  }
+});
+```
+
+### Message Not Sending
+1. **Check Connection**: Ensure WebSocket is connected
+2. **Verify Data**: Ensure `recipientId` or `projectId` is valid UUID
+3. **Check Permissions**: Ensure user has access to project (for project messages)
+
+### Missing Messages
+1. **Join Project Room**: Ensure `socket.emit('joinProject', {projectId})` was called
+2. **Check Event Listeners**: Ensure `socket.on('newMessage', callback)` is set up
+3. **Verify User Rooms**: User should be in `user:${userId}` room automatically 

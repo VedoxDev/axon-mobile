@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +8,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { chatService, Conversation } from '@/services/chatService';
 import { UserService, UserSearchResult } from '@/services/userService';
 import { useUser } from '@/contexts/UserContext';
+import NewChatModal from './NewChatModal';
 
 // Define types for the items
 type ChatItem = {
@@ -32,10 +34,13 @@ export default function MessagesScreen() {
   const [nameFocused, setNameFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
+  const [filteredConversations, setFilteredConversations] = useState<Conversation[]>([]);
+  const [directChats, setDirectChats] = useState<Conversation[]>([]);
+  const [projectChats, setProjectChats] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'chats' | 'proyectos'>('chats');
 
   const messageListenerRef = useRef<(() => void) | null>(null);
 
@@ -101,6 +106,9 @@ export default function MessagesScreen() {
             const currentUserId = getCurrentUserId();
             return (message.senderId === conv.partner.id && message.recipientId === currentUserId) ||
                    (message.senderId === currentUserId && message.recipientId === conv.partner.id);
+          } else if (conv.type === 'project' && conv.project) {
+            // Check if this message is for this project
+            return message.projectId === conv.project.id;
           }
           return false;
         });
@@ -146,9 +154,52 @@ export default function MessagesScreen() {
 
         return updated;
       });
+      
+      // Also update separated conversations for real-time updates
+      setConversations(prev => {
+        const updated = [...prev];
+        const conversationIndex = updated.findIndex(conv => {
+          if (conv.type === 'direct' && conv.partner) {
+            const currentUserId = getCurrentUserId();
+            return (message.senderId === conv.partner.id && message.recipientId === currentUserId) ||
+                   (message.senderId === currentUserId && message.recipientId === conv.partner.id);
+          } else if (conv.type === 'project' && conv.project) {
+            return message.projectId === conv.project.id;
+          }
+          return false;
+        });
+
+        if (conversationIndex >= 0) {
+          updated[conversationIndex] = {
+            ...updated[conversationIndex],
+            lastMessage: {
+              id: message.id,
+              content: message.content,
+              senderId: message.senderId || '',
+              senderName: message.senderName,
+              createdAt: message.createdAt,
+              isRead: message.isRead
+            }
+          };
+          
+          const updatedConv = updated.splice(conversationIndex, 1)[0];
+          updated.unshift(updatedConv);
+        }
+
+        separateConversations(updated);
+        return updated;
+      });
     });
 
     messageListenerRef.current = unsubscribe;
+  };
+
+  const separateConversations = (convs: Conversation[]) => {
+    const direct = convs.filter(conv => conv.type === 'direct');
+    const projects = convs.filter(conv => conv.type === 'project');
+    
+    setDirectChats(direct);
+    setProjectChats(projects);
   };
 
   const loadConversations = async () => {
@@ -156,32 +207,37 @@ export default function MessagesScreen() {
       const convs = await chatService.getConversations();
       console.log('📥 Loaded conversations:', JSON.stringify(convs, null, 2));
       
-      // Filter only direct conversations
-      const directConversations = convs.filter(conv => conv.type === 'direct');
-      setConversations(directConversations);
+      // Show both direct and project conversations
+      setConversations(convs);
+      setFilteredConversations(convs);
+      separateConversations(convs);
     } catch (error) {
       console.error('Failed to load conversations:', error);
     }
   };
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     
-    if (query.trim().length < 2) {
-      setSearchResults([]);
+    if (query.trim().length === 0) {
+      setFilteredConversations([]);
       return;
     }
 
-    try {
-      setIsSearching(true);
-      const results = await UserService.searchUsers(query.trim());
-      setSearchResults(results.users);
-    } catch (error) {
-      console.error('Failed to search users:', error);
-      Alert.alert('Error', 'Failed to search users. Please try again.');
-    } finally {
-      setIsSearching(false);
-    }
+    // Filter based on active tab
+    const sourceData = activeTab === 'chats' ? directChats : projectChats;
+    const filtered = sourceData.filter(conv => {
+      if (conv.type === 'direct' && conv.partner) {
+        const partnerName = `${conv.partner.nombre} ${conv.partner.apellidos}`.toLowerCase();
+        return partnerName.includes(query.toLowerCase());
+      } else if (conv.type === 'project' && conv.project) {
+        const projectName = conv.project.name.toLowerCase();
+        return projectName.includes(query.toLowerCase());
+      }
+      return false;
+    });
+    
+    setFilteredConversations(filtered);
   };
 
   const openChat = (chatId: string, chatType: 'direct' | 'project', chatName: string) => {
@@ -226,64 +282,131 @@ export default function MessagesScreen() {
   };
 
   const renderChatItem = ({ item }: { item: Conversation }) => {
-    if (item.type !== 'direct' || !item.partner) return null;
-    
-    const partnerName = `${item.partner.nombre} ${item.partner.apellidos}`;
-    const lastMessageTime = item.lastMessage ? formatTime(item.lastMessage.createdAt) : '';
     const currentUserId = getCurrentUserId();
+    const lastMessageTime = item.lastMessage ? formatTime(item.lastMessage.createdAt) : '';
     
-    // Show unread indicator only if there's a message from the OTHER person that's unread
-    const hasUnreadFromOther = item.lastMessage && 
-                               !item.lastMessage.isRead && 
-                               item.lastMessage.senderId !== currentUserId;
-    
-    return (
-      <TouchableOpacity 
-        style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}
-        onPress={() => openChat(item.partner!.id, 'direct', partnerName)}
-      >
-        <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.chatAvatar }]}>
-          <Text style={[styles.chatInitial, { color: theme.card }]}>{partnerName[0]}</Text>
-        </View>
-        <View style={styles.chatDetails}>
-          <Text style={[styles.chatName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
-            {partnerName}
-          </Text>
-          <Text style={[styles.lastMessage, { color: theme.gray }]} numberOfLines={1}>
-            {item.lastMessage?.content || 'No messages yet'}
-          </Text>
-          <View style={styles.chatMeta}>
-            <Text style={[styles.messageTime, { color: theme.gray }]}>{lastMessageTime}</Text>
+    if (item.type === 'direct' && item.partner) {
+      const partnerName = `${item.partner.nombre} ${item.partner.apellidos}`;
+      
+      // Show unread indicator only if there's a message from the OTHER person that's unread
+      const hasUnreadFromOther = item.lastMessage && 
+                                 !item.lastMessage.isRead && 
+                                 item.lastMessage.senderId !== currentUserId;
+      
+      return (
+        <TouchableOpacity 
+          style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}
+          onPress={() => openChat(item.partner!.id, 'direct', partnerName)}
+        >
+          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.chatAvatar }]}>
+            <Text style={[styles.chatInitial, { color: theme.card }]}>{partnerName[0]}</Text>
           </View>
-        </View>
-        {hasUnreadFromOther && (
-          <View style={[styles.unreadIndicator, { backgroundColor: theme.primary }]} />
-        )}
-      </TouchableOpacity>
-    );
+          <View style={styles.chatDetails}>
+            <Text style={[styles.chatName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
+              {partnerName}
+            </Text>
+            <Text style={[styles.lastMessage, { color: theme.gray }]} numberOfLines={1}>
+              {item.lastMessage?.content || 'No messages yet'}
+            </Text>
+            <View style={styles.chatMeta}>
+              <Text style={[styles.messageTime, { color: theme.gray }]}>{lastMessageTime}</Text>
+            </View>
+          </View>
+          {hasUnreadFromOther && (
+            <View style={[styles.unreadIndicator, { backgroundColor: theme.primary }]} />
+          )}
+        </TouchableOpacity>
+      );
+    } else if (item.type === 'project' && item.project) {
+      const projectName = item.project.name;
+      
+      // Show unread indicator for any unread project message
+      const hasUnreadMessage = item.lastMessage && !item.lastMessage.isRead;
+      
+      return (
+        <TouchableOpacity 
+          style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}
+          onPress={() => openChat(item.project!.id, 'project', projectName)}
+        >
+          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.groupAvatar }]}>
+            <Ionicons name="people" size={24} color={theme.card} />
+          </View>
+          <View style={styles.chatDetails}>
+            <Text style={[styles.chatName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
+              {projectName}
+            </Text>
+            <Text style={[styles.lastMessage, { color: theme.gray }]} numberOfLines={1}>
+              {item.lastMessage?.content || 'Sin mensajes aún'}
+            </Text>
+            <View style={styles.chatMeta}>
+              <Text style={[styles.messageTime, { color: theme.gray }]}>{lastMessageTime}</Text>
+            </View>
+          </View>
+          {hasUnreadMessage && (
+            <View style={[styles.unreadIndicator, { backgroundColor: theme.primary }]} />
+          )}
+        </TouchableOpacity>
+      );
+    }
+    
+    return null;
   };
 
-  const renderSearchResult = ({ item }: { item: UserSearchResult }) => (
-    <TouchableOpacity 
-      style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}
-      onPress={() => startDirectChat(item)}
-    >
-      <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.chatAvatar }]}>
-        <Text style={[styles.chatInitial, { color: theme.card }]}>{item.nombre[0]}</Text>
-      </View>
-      <View style={styles.chatDetails}>
-        <Text style={[styles.chatName, { color: theme.text }]}>{item.fullName}</Text>
-        <Text style={[styles.lastMessage, { color: theme.gray }]}>{item.email}</Text>
-        <View style={styles.chatMeta}>
-          <Text style={[styles.messageTime, { color: theme.gray }]}>{item.status}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+  const renderTabButtons = () => (
+    <View style={styles.tabContainer}>
+      <TouchableOpacity
+        style={[
+          styles.tabButton,
+          activeTab === 'chats' && styles.activeTab,
+          { borderBottomColor: activeTab === 'chats' ? theme.primary : 'transparent' }
+        ]}
+        onPress={() => {
+          setActiveTab('chats');
+          setSearchQuery('');
+          setFilteredConversations([]);
+        }}
+      >
+        <Text style={[
+          styles.tabText,
+          { color: activeTab === 'chats' ? theme.primary : theme.gray }
+        ]}>
+          Chats ({directChats.length})
+        </Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity
+        style={[
+          styles.tabButton,
+          activeTab === 'proyectos' && styles.activeTab,
+          { borderBottomColor: activeTab === 'proyectos' ? theme.primary : 'transparent' }
+        ]}
+        onPress={() => {
+          setActiveTab('proyectos');
+          setSearchQuery('');
+          setFilteredConversations([]);
+        }}
+      >
+        <Text style={[
+          styles.tabText,
+          { color: activeTab === 'proyectos' ? theme.primary : theme.gray }
+        ]}>
+          Proyectos ({projectChats.length})
+        </Text>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
-    <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>Mensajes</Text>
+    <SafeAreaView style={[styles.safeAreaContainer, { backgroundColor: colorScheme === 'dark' ? theme.card : theme.background }]} edges={['left', 'right', 'bottom']}>
+      <View style={styles.titleContainer}>
+        <Text style={[styles.title, { color: theme.text }]}>Mensajes</Text>
+        <TouchableOpacity 
+          style={[styles.newChatButton, { backgroundColor: theme.primary }]}
+          onPress={() => setShowNewChatModal(true)}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
 
       <TextInput
         style={[styles.searchInput, { 
@@ -292,51 +415,74 @@ export default function MessagesScreen() {
           borderColor: nameFocused ? 
           theme.orange : theme.gray 
         }]}
-        placeholder="Buscar usuarios..."
+        placeholder="Buscar conversaciones..."
         placeholderTextColor={theme.gray}
         value={searchQuery}
         onChangeText={handleSearch}
         onFocus={() => setNameFocused(true)}
         onBlur={() => setNameFocused(false)}
       />
-      {isSearching && (
-        <ActivityIndicator size="small" color={theme.primary} style={styles.searchLoader} />
-      )}
-
+      
+      {renderTabButtons()}
+      
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
           <Text style={[styles.loadingText, { color: theme.text }]}>Cargando conversaciones...</Text>
         </View>
-      ) : searchQuery.length >= 2 ? (
+      ) : searchQuery.length > 0 ? (
         <FlatList
-          data={searchResults}
-          renderItem={renderSearchResult}
-          keyExtractor={(item) => item.id}
+          data={filteredConversations}
+          renderItem={renderChatItem}
+          keyExtractor={(item) => {
+            if (item.type === 'direct' && item.partner) {
+              return `search-direct-${item.partner.id}`;
+            } else if (item.type === 'project' && item.project) {
+              return `search-project-${item.project.id}`;
+            }
+            return `search-chat-${Math.random()}`;
+          }}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.gray }]}>
-                {isSearching ? 'Buscando...' : 'No se encontraron usuarios'}
+                No se encontraron conversaciones con ese nombre
               </Text>
             </View>
           }
         />
       ) : (
         <FlatList
-          data={conversations}
+          data={activeTab === 'chats' ? directChats : projectChats}
           renderItem={renderChatItem}
-          keyExtractor={(item) => `chat-${item.partner?.id || Math.random()}`}
+          keyExtractor={(item) => {
+            if (item.type === 'direct' && item.partner) {
+              return `tab-direct-${item.partner.id}`;
+            } else if (item.type === 'project' && item.project) {
+              return `tab-project-${item.project.id}`;
+            }
+            return `tab-chat-${Math.random()}`;
+          }}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.gray }]}>
-                No tienes conversaciones aún. Busca usuarios para empezar a chatear.
+                {activeTab === 'chats' 
+                  ? 'No tienes chats directos aún. Toca el botón + para iniciar un chat.'
+                  : 'No tienes chats de proyectos aún.'
+                }
               </Text>
             </View>
           }
         />
       )}
+      
+      <NewChatModal
+        visible={showNewChatModal}
+        onClose={() => setShowNewChatModal(false)}
+        onStartChat={startDirectChat}
+        theme={theme}
+      />
     </SafeAreaView>
   );
 }
@@ -349,12 +495,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 15,
     marginTop: 10,
     paddingLeft: 10,
+    paddingRight: 10,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  newChatButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   searchInput: {
     height: 50,
@@ -440,5 +599,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    marginBottom: 10,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 }); 

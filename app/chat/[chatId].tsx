@@ -20,6 +20,7 @@ import { chatService, Message } from '@/services/chatService';
 import { UserSearchResult } from '@/services/userService';
 import { useUser } from '@/contexts/UserContext';
 import { DebugService } from '@/services/debugService';
+import { callService } from '@/services/callService';
 
 export default function ChatScreen() {
   const colorScheme = useColorScheme();
@@ -41,7 +42,7 @@ export default function ChatScreen() {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const flatListRef = useRef<FlatList>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     initializeChat();
@@ -102,8 +103,65 @@ export default function ChatScreen() {
       }
 
       if (isRelevantMessage) {
-        setMessages(prev => [message, ...prev]);
+        setMessages(prev => {
+          // Check if message already exists to prevent duplicates
+          const messageExists = prev.some(existingMsg => existingMsg.id === message.id);
+          if (messageExists) {
+            return prev; // Don't add duplicate
+          }
+          return [message, ...prev];
+        });
         scrollToBottom();
+        
+                         // 📞 Check if this is a call invitation and show alert
+        console.log('🔍 DEBUGGING CALL INVITATION LOGIC:');
+        console.log('isCallInvitation:', isCallInvitation(message.content));
+        console.log('message.senderId:', message.senderId);
+        console.log('currentUserId:', currentUserId);
+        console.log('senderId !== currentUserId:', message.senderId !== currentUserId);
+        
+        if (isCallInvitation(message.content) && message.senderId !== currentUserId) {
+           console.log('📞 INCOMING CALL INVITATION:');
+           console.log('Message content:', message.content);
+           console.log('Full message object:', JSON.stringify(message, null, 2));
+           
+           // Check if call ID is in message metadata
+           console.log('🔍 Checking for callId in metadata:', message.callId);
+           console.log('🔍 Message keys:', Object.keys(message));
+           
+           const callId = message.callId;
+          
+          if (callId) {
+            Alert.alert(
+              'Call Invitation',
+              message.content,
+              [
+                { text: 'Decline', style: 'cancel' },
+                { 
+                  text: 'Join', 
+                  onPress: () => {
+                    console.log('🎥 Joining call from notification:', callId);
+                    router.push(`/call/${callId}` as any);
+                  }
+                }
+              ]
+            );
+          } else {
+            console.log('❌ No call ID found in message or metadata');
+            // Still show the alert but with manual input option
+            Alert.alert(
+              'Call Invitation',
+              message.content + '\n\n(Call ID not found - manual input available)',
+              [
+                { text: 'Decline', style: 'cancel' },
+                { 
+                  text: 'Manual Join', 
+                  onPress: () => joinCallFromInvitation(message.content)
+                }
+              ]
+            );
+          }
+        }
       }
     });
 
@@ -233,9 +291,147 @@ export default function ChatScreen() {
     }
   };
 
+  const startCall = async (audioOnly: boolean) => {
+    try {
+      console.log('🚀 STARTING CALL DEBUG:');
+      console.log('chatType:', chatType);
+      console.log('chatId:', chatId);
+      console.log('audioOnly:', audioOnly);
+      
+      if (chatType === 'direct') {
+        // Start direct call
+        const { call } = await callService.startDirectCall(
+          chatId,
+          audioOnly ? 'Audio call' : 'Video call',
+          audioOnly
+        );
+        
+        console.log('✅ Direct call created:', call);
+        console.log('✅ Call ID to navigate to:', call.id);
+        console.log('✅ Call ID type:', typeof call.id);
+        console.log('✅ Navigation URL:', `/call/${call.id}`);
+        
+        // Navigate to call screen
+        router.push(`/call/${call.id}` as any);
+      } else if (chatType === 'project') {
+        // Start project call
+        const { call } = await callService.startProjectCall(
+          chatId,
+          audioOnly ? 'Project audio meeting' : 'Project video meeting',
+          10, // max participants
+          audioOnly
+        );
+        
+        console.log('✅ Project call created:', call);
+        console.log('✅ Call ID to navigate to:', call.id);
+        console.log('✅ Call ID type:', typeof call.id);
+        console.log('✅ Navigation URL:', `/call/${call.id}`);
+        
+        // Navigate to call screen
+        router.push(`/call/${call.id}` as any);
+      }
+    } catch (error) {
+      console.error('❌ Failed to start call:', error);
+      Alert.alert('Error', 'Failed to start call. Please try again.');
+    }
+  };
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // 📞 Extract call ID from call invitation message
+  const extractCallId = (messageContent: string): string | null => {
+    console.log('🔍 EXTRACTING CALL ID:');
+    console.log('Raw message:', JSON.stringify(messageContent));
+    console.log('Message preview:', messageContent.substring(0, 100) + '...');
+    
+    // Try multiple patterns
+    const patterns = [
+      // Standard UUID pattern
+      /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      // callId: pattern
+      /callId[:\s]*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi,
+      // call/ pattern (from URLs)
+      /call\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi,
+      // Any UUID-like pattern with more flexibility
+      /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi
+    ];
+    
+    for (let i = 0; i < patterns.length; i++) {
+      const pattern = patterns[i];
+      console.log(`🔍 Trying pattern ${i + 1}:`, pattern.source);
+      
+      const matches = messageContent.match(pattern);
+      console.log(`🔍 Pattern ${i + 1} matches:`, matches);
+      
+      if (matches && matches.length > 0) {
+        const callId = matches[0].includes('-') ? matches[0] : matches[1];
+        console.log('✅ Found call ID:', callId);
+        return callId;
+      }
+    }
+    
+    console.log('❌ No call ID found in message');
+    
+    // Last resort: look for any long alphanumeric string that might be an ID
+    const fallbackPattern = /[a-f0-9]{32,}/gi;
+    const fallbackMatch = messageContent.match(fallbackPattern);
+    console.log('🔍 Fallback pattern match:', fallbackMatch);
+    
+    return fallbackMatch ? fallbackMatch[0] : null;
+  };
+
+  // 📞 Check if message is a call invitation
+  const isCallInvitation = (messageContent: string): boolean => {
+    const isCallMessage = messageContent.includes('📞') || messageContent.toLowerCase().includes('call') || messageContent.toLowerCase().includes('meeting');
+    
+    if (isCallMessage) {
+      console.log('🔍 CALL INVITATION DETECTED:');
+      console.log('Message content:', JSON.stringify(messageContent));
+      console.log('Message length:', messageContent.length);
+      console.log('Character codes:', Array.from(messageContent).map(c => `${c}(${c.charCodeAt(0)})`));
+    }
+    
+    return isCallMessage;
+  };
+
+  // 📞 Handle joining call from invitation
+  const joinCallFromInvitation = (messageContent: string) => {
+    const callId = extractCallId(messageContent);
+    if (callId) {
+      console.log('🎥 Joining call from invitation:', callId);
+      router.push(`/call/${callId}` as any);
+    } else {
+      console.log('❌ Could not extract call ID from invitation');
+      
+      // Show manual input option for testing
+      Alert.alert(
+        'Call ID Not Found',
+        'Could not extract call ID from message. Do you want to enter it manually for testing?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Manual Input',
+            onPress: () => {
+              Alert.prompt(
+                'Enter Call ID',
+                'Paste the call ID from logs:',
+                (inputCallId) => {
+                  if (inputCallId && inputCallId.trim()) {
+                    console.log('🎥 Joining call with manual ID:', inputCallId.trim());
+                    router.push(`/call/${inputCallId.trim()}` as any);
+                  }
+                },
+                'plain-text',
+                '1e152c3f-7be3-4c3d-b10b-0e19d173294d' // Default from your earlier log
+              );
+            }
+          }
+        ]
+      );
+    }
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -244,13 +440,16 @@ export default function ChatScreen() {
     const messageSenderId = item.senderId || item.sender?.id;
     const isOwnMessage = messageSenderId === currentUserId;
     const senderDisplayName = item.senderName || (item.sender ? `${item.sender.nombre} ${item.sender.apellidos}` : '');
+    const isCallInvite = isCallInvitation(item.content);
 
     return (
       <View style={[styles.messageContainer, isOwnMessage ? styles.ownMessage : styles.otherMessage]}>
         <View style={[
           styles.messageBubble,
           {
-            backgroundColor: isOwnMessage ? theme.primary : theme.card,
+            backgroundColor: isOwnMessage ? theme.primary : (isCallInvite ? theme.tint + '20' : theme.card),
+            borderColor: isCallInvite ? theme.tint : 'transparent',
+            borderWidth: isCallInvite ? 1 : 0,
           }
         ]}>
           {!isOwnMessage && chatType === 'project' && (
@@ -262,6 +461,32 @@ export default function ChatScreen() {
           ]}>
             {item.content}
           </Text>
+          
+          {/* 📞 Call invitation button */}
+          {isCallInvite && !isOwnMessage && (
+            <TouchableOpacity
+              style={[styles.joinCallButton, { backgroundColor: theme.tint }]}
+              onPress={() => {
+                console.log('🎥 JOIN CALL BUTTON PRESSED');
+                console.log('Message object:', JSON.stringify(item, null, 2));
+                
+                // Check if call ID is in message metadata
+                const callId = item.callId;
+                
+                if (callId) {
+                  console.log('✅ Found callId in metadata:', callId);
+                  router.push(`/call/${callId}` as any);
+                } else {
+                  console.log('❌ No callId in metadata, using extraction');
+                  joinCallFromInvitation(item.content);
+                }
+              }}
+            >
+              <Ionicons name="videocam" size={16} color="#fff" />
+              <Text style={styles.joinCallButtonText}>Join Call</Text>
+            </TouchableOpacity>
+          )}
+          
           <Text style={[
             styles.messageTime,
             { color: isOwnMessage ? 'rgba(255,255,255,0.7)' : theme.gray }
@@ -280,8 +505,8 @@ export default function ChatScreen() {
       <View style={styles.typingContainer}>
         <Text style={[styles.typingText, { color: theme.gray }]}>
           {typingUsers.length === 1 
-            ? `Someone is typing...` 
-            : `${typingUsers.length} people are typing...`
+            ? `Alguien está escribiendo...` 
+            : `${typingUsers.length} personas están escribiendo...`
           }
         </Text>
       </View>
@@ -316,15 +541,37 @@ export default function ChatScreen() {
         </View>
         <View style={styles.headerActions}>
           {chatType === 'direct' && (
-            <TouchableOpacity style={styles.headerButton}>
+            <TouchableOpacity 
+              style={styles.headerButton}
+              onPress={() => startCall(true)} // Audio only
+            >
               <Ionicons name="call" size={20} color={theme.text} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => startCall(false)} // Video call
+          >
             <Ionicons name="videocam" size={20} color={theme.text} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
-            <Ionicons name="ellipsis-vertical" size={20} color={theme.text} />
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => {
+              Alert.prompt(
+                'Test: Join Call by ID',
+                'Enter call ID to test joining:',
+                (testCallId) => {
+                  if (testCallId && testCallId.trim()) {
+                    console.log('🧪 Testing join call with ID:', testCallId.trim());
+                    router.push(`/call/${testCallId.trim()}` as any);
+                  }
+                },
+                'plain-text',
+                '6878ebe4-c0fb-44be-8ef6-66f709953843'
+              );
+            }}
+          >
+            <Ionicons name="flask" size={20} color={theme.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -501,5 +748,20 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  joinCallButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+    gap: 6,
+  },
+  joinCallButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

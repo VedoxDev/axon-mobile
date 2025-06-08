@@ -22,6 +22,7 @@ export interface Message {
   projectId?: string;
   isRead: boolean;
   isEdited?: boolean;
+  callId?: string; // Call ID for call invitations
 }
 
 export interface Conversation {
@@ -71,6 +72,7 @@ function normalizeMessage(msg: any): Message {
     projectId: msg.projectId,
     isRead: msg.isRead || false,
     isEdited: msg.isEdited || false,
+    callId: msg.callId, // Preserve call ID for call invitations
   };
 }
 

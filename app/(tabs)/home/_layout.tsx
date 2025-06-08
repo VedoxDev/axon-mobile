@@ -194,7 +194,11 @@ export default function HomeLayout() {
           {selectedProject ? (
             <>
               <Animated.View style={[styles.topButtonsContainer, topButtonsAnimStyle]}>
-                <TouchableOpacity style={styles.largeMensajesButton} onPress={toggleSidebar}>
+                <TouchableOpacity style={styles.largeMensajesButton} onPress={() => {
+                  router.push('/home');
+                  setSelectedProject(null); // Collapse the sidebar
+                  setIsSidebarExpanded(false);
+                }}>
                   <Ionicons name="chatbubble" size={24} color={ colorScheme === 'dark' ? theme.text : theme.background } style={{ marginRight: 10 }} />
                   <Animated.View style={mensajeTextAnimStyle}>
                     <Text style={[styles.largeMensajesText, { color: colorScheme === 'dark' ? theme.text : theme.background }]}>Mensajes</Text>
@@ -268,7 +272,7 @@ export default function HomeLayout() {
             <>
               <TouchableOpacity 
                 style={[styles.sidebarButton, styles.messagesButton, { backgroundColor: theme.chatButton }]}
-                onPress={toggleSidebar}
+                onPress={() => router.push('/home')}
               >
                 <Ionicons name="chatbubble" size={24} color="#fff" />
               </TouchableOpacity>
@@ -387,7 +391,18 @@ export default function HomeLayout() {
                   
                   <TouchableOpacity 
                     style={[styles.actionButton, { backgroundColor: theme.chatButton }]}
-                    onPress={toggleSidebar}
+                    onPress={() => {
+                      if (selectedProject) {
+                        router.push({
+                          pathname: '/chat/[chatId]',
+                          params: {
+                            chatId: selectedProject.id,
+                            chatType: 'project',
+                            chatName: selectedProject.name
+                          }
+                        });
+                      }
+                    }}
                   >
                     <Ionicons name="chatbubble" size={20} color="#fff" />
                     <Text style={styles.actionButtonText}>Chat</Text>
