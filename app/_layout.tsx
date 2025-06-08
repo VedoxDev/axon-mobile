@@ -10,6 +10,7 @@ import { Colors } from '@/constants/Colors'; // <--- importás tus colores
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from './auth/AuthProvider'; // Import AuthProvider and useAuth
 import { ProjectProvider } from '@/contexts/ProjectContext'; // Import ProjectProvider
+import { UserProvider } from '@/contexts/UserContext'; // Import UserProvider
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -32,10 +33,13 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         {/* Wrap the main content with AuthProvider */}
         <AuthProvider>
-          {/* Wrap with ProjectProvider so project context is available throughout the app */}
-          <ProjectProvider>
-            <LayoutContent theme={theme} />
-          </ProjectProvider>
+          {/* Wrap with UserProvider so user context is available throughout the app */}
+          <UserProvider>
+            {/* Wrap with ProjectProvider so project context is available throughout the app */}
+            <ProjectProvider>
+              <LayoutContent theme={theme} />
+            </ProjectProvider>
+          </UserProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>

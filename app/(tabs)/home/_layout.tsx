@@ -186,6 +186,7 @@ export default function HomeLayout() {
               backgroundColor: colorScheme === 'dark' ? theme.background : theme.card,
               paddingTop: insets.top, 
               paddingBottom: 0,
+              alignItems: selectedProject ? 'stretch' : 'center',
             },
             sidebarAnimStyle,
           ]}
@@ -323,55 +324,51 @@ export default function HomeLayout() {
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled={true}
               >
-                <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
-                <Text style={{ color: theme.text, marginBottom: 10 }}>{selectedProject?.description}</Text>
-                
-                {/* Project Status */}
-                <View style={styles.statusSection}>
-                  <Text style={[styles.statusLabel, { color: theme.gray }]}>Estado: </Text>
-                  <Text style={[styles.statusValue, { color: theme.text }]}>{selectedProject?.status}</Text>
-                  <Text style={[styles.roleLabel, { color: theme.gray }]}>({selectedProject?.role})</Text>
+                <View style={styles.projectHeader}>
+                  <View style={styles.projectTitleContainer}>
+                    <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: theme.primary + '20' }]}>
+                      <Text style={[styles.statusText, { color: theme.primary }]}>{selectedProject?.role}</Text>
+                    </View>
+                  </View>
+                  
+                  {/* Invite Members Button - Only show for admin/owner roles */}
+                  {selectedProject?.role && selectedProject.role !== 'member' && (
+                    <TouchableOpacity 
+                      style={[styles.inviteMembersButtonTop, { 
+                        backgroundColor: theme.primary + '15',
+                        borderColor: theme.primary + '40'
+                      }]}
+                      onPress={() => {
+                        if (selectedProject) {
+                          router.push({
+                            pathname: '/project/InviteMembers/inviteMembers',
+                            params: {
+                              projectId: selectedProject.id,
+                              projectName: selectedProject.name
+                            }
+                          });
+                        }
+                      }}
+                    >
+                      <Ionicons name="person-add" size={16} color={theme.primary} />
+                    </TouchableOpacity>
+                  )}
                 </View>
                 
-                {/* Progress Section */}
-                <View style={styles.progressSection}>
-                  <View style={styles.progressHeader}>
-                    <Text style={[styles.progressTitle, { color: theme.text }]}>Progreso del Proyecto</Text>
-                    <Text style={[styles.progressPercentage, { color: theme.progressBarText }]}>45%</Text>
-                  </View>
-                  <View style={[styles.progressBarContainer, { backgroundColor: theme.progressBarBackground }]}>
-                    <View style={[styles.progressBarFill, { backgroundColor: theme.progressBarFill, width: '45%' }]} />
+                <Text style={[styles.projectDescription, { color: theme.gray }]}>{selectedProject?.description}</Text>
+                
+                <View style={[styles.projectStatus, { backgroundColor: theme.card }]}>
+                  <View style={styles.statusItem}>
+                    <Text style={[styles.statusLabel, { color: theme.gray }]}>Estado</Text>
+                    <Text style={[styles.statusValue, { color: theme.text }]}>{selectedProject?.status}</Text>
                   </View>
                 </View>
 
-                {/* Invite Members Button - Only show for admin/owner roles */}
-                {selectedProject?.role && selectedProject.role !== 'member' && (
+                {/* Quick Actions */}
+                <View style={styles.quickActions}>
                   <TouchableOpacity 
-                    style={[styles.inviteMembersButton, { backgroundColor: theme.primary + '15', borderColor: theme.primary }]}
-                    onPress={() => {
-                      if (selectedProject) {
-                        router.push({
-                          pathname: '/project/InviteMembers/inviteMembers',
-                          params: {
-                            projectId: selectedProject.id,
-                            projectName: selectedProject.name
-                          }
-                        });
-                      }
-                    }}
-                  >
-                    <Ionicons name="person-add" size={16} color={theme.primary} />
-                    <Text style={[styles.inviteMembersText, { color: theme.primary }]}>
-                      Invitar Miembros
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Members Section */}
-
-                <View style={styles.projectTabs}>
-                  <TouchableOpacity 
-                    style={styles.tabItem}
+                    style={[styles.actionButton, { backgroundColor: theme.primary }]}
                     onPress={() => {
                       if (selectedProject) {
                         router.push({
@@ -384,51 +381,17 @@ export default function HomeLayout() {
                       }
                     }}
                   >
-                    <Ionicons name="checkmark-circle" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Tareas</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.tabItem}
-                    onPress={toggleSidebar}
-                  >
-                    <Ionicons name="chatbubble" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Chat</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.tabItem}
-                    onPress={() => router.push('/project/Calendar/calendarScreen')}
-                  ><Ionicons name="calendar" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Calendario</Text>
-                  </TouchableOpacity>      
-                  <TouchableOpacity 
-                    style={styles.tabItem}
-                    onPress={() => router.push('/project/Activity/activityScreen')}
-                  >
-                    <Ionicons name="pulse" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Actividad</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.tabItem}
-                    onPress={() => router.push('/project/Files/filesScreen')}
-                  >
-                    <Ionicons name="folder" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Archivos</Text>
-                    </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.tabItem}
-                    onPress={() => router.push('/project/Meetings/meetingScreen')}
-                  >
-                    <Ionicons name="people" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Reuniones</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.tabItem}
-                    onPress={() => router.push('/project/Announcements/annScreen')}
-                  >
-                    <Ionicons name="megaphone" size={18} color={theme.text} style={styles.tabIcon} />
-                    <Text style={[styles.projectTab, { color: theme.text }]}>Anuncios</Text>
+                    <Ionicons name="checkmark-circle" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Ver Tareas</Text>
                   </TouchableOpacity>
                   
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { backgroundColor: theme.chatButton }]}
+                    onPress={toggleSidebar}
+                  >
+                    <Ionicons name="chatbubble" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Chat</Text>
+                  </TouchableOpacity>
                 </View>
               </ScrollView>
             </Animated.View>
@@ -517,42 +480,26 @@ const styles = StyleSheet.create({
   projectDetailsCard: {
     height: PROJECT_DETAILS_HEIGHT,
     borderRadius: 18,
-    padding: 16,
+    padding: 20,
     elevation: 2,
     shadowOpacity: 0.1,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     marginTop: 0,
     marginBottom: 0,
-    marginHorizontal: 3,
+    marginHorizontal: 16,
     borderBottomWidth: 0,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
+    flex: 1,
   },
   projectTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 8,
+    flex: 1,
   },
-  projectTabs: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 16,
-    gap: 8,
-  },
-  tabItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-    marginBottom: 15,
-  },
-  tabIcon: {
-    marginRight: 8,
-  },
-  projectTab: {
-    fontSize: 15,
-    backgroundColor: 'transparent',
-  },
+
   content: {
     flex: 1,
     zIndex: 1,
@@ -561,7 +508,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     marginBottom: 10,
   },
   largeMensajesButton: {
@@ -601,31 +548,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  progressSection: {
-    marginBottom: 20,
-  },
-  progressHeader: {
+  projectHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  progressTitle: {
-    fontSize: 16,
+  projectTitleContainer: {
+    flex: 1,
+    marginRight: 12,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  statusText: {
+    fontSize: 12,
     fontWeight: '600',
+    textTransform: 'uppercase',
   },
-  progressPercentage: {
+  projectDescription: {
     fontSize: 14,
-    fontWeight: '500',
+    lineHeight: 20,
+    marginBottom: 20,
   },
-  progressBarContainer: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
+  projectStatus: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
   },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
+  statusItem: {
+    alignItems: 'center',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  actionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   membersSection: {
     marginBottom: 20,
@@ -703,22 +678,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  statusSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
   statusLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
   statusValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
     textTransform: 'capitalize',
-  },
-  roleLabel: {
-    fontSize: 12,
-    marginLeft: 5,
   },
   projectGridScrollView: {
     maxHeight: PROJECT_GRID_MAX_HEIGHT,
@@ -750,6 +719,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 16,
     gap: 6,
+  },
+  inviteMembersButtonTop: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   inviteMembersText: {
     fontSize: 14,

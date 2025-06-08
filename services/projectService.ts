@@ -42,6 +42,15 @@ export interface InviteUserResponse {
   userId: string; // The UUID of the invited user
 }
 
+// Project member interface
+export interface ProjectMember {
+  id: string; // User UUID
+  nombre: string; // First name
+  apellidos: string; // Last name
+  role: "owner" | "member"; // User's role in the project
+  status: "online" | "offline"; // User's current status
+}
+
 // Project service class to handle all project-related API calls
 export class ProjectService {
   // Get all projects for the authenticated user
@@ -150,6 +159,41 @@ export class ProjectService {
       
       // Generic error for network issues or other problems
       throw new Error('Failed to send invitation. Please check your connection and try again.');
+    }
+  }
+
+  // Get project members for task assignment
+  static async getProjectMembers(projectId: string): Promise<ProjectMember[]> {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/projects/${projectId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      return response.data.members || [];
+    } catch (error: any) {
+      console.error('Failed to fetch project members', error);
+      
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        throw new Error('Authentication failed. Please log in again.');
+      } else if (error.response?.status === 403) {
+        throw new Error('You do not have permission to view this project.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Project not found.');
+      } else if (error.response?.status === 500) {
+        throw new Error('Server error. Please try again later.');
+      }
+      
+      // Generic error for network issues or other problems
+      throw new Error('Failed to fetch project members. Please check your connection and try again.');
     }
   }
 }

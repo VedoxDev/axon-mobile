@@ -16,7 +16,7 @@ export const Colors = {
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
     orange: '#FFA500',
-    gray: 'gray',
+    gray: '#8E8E93',
     primary: '#007AFF',
     card: '#F2F2F2',
     inputBackground: '#FFFFFF',

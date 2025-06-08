@@ -45,7 +45,7 @@ export default function CreateSectionModal() {
       />
       
       <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-        <Text style={[styles.title, { color: theme.text }]}>Create New Section</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Crear nueva sección</Text>
         
         <TextInput
           style={[styles.input, { 
@@ -53,7 +53,7 @@ export default function CreateSectionModal() {
             color: theme.text,
             borderColor: theme.gray 
           }]}
-          placeholder="Section name"
+          placeholder="Nombre de la sección"
           placeholderTextColor={theme.gray}
           value={sectionName}
           onChangeText={setSectionName}
@@ -66,7 +66,7 @@ export default function CreateSectionModal() {
             style={[styles.button, styles.cancelButton]}
             onPress={() => router.back()}
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>Cancelar</Text>
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -77,7 +77,7 @@ export default function CreateSectionModal() {
             {isCreating ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.createButtonText}>Create</Text>
+              <Text style={styles.createButtonText}>Crear</Text>
             )}
           </TouchableOpacity>
         </View>

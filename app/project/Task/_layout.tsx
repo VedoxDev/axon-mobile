@@ -20,6 +20,26 @@ export default function Layout() {
         animation: 'fade',
         headerShown: false,
       }} />
+      <Stack.Screen name="selectLabelsModal" options={{
+        presentation: 'transparentModal',
+        animation: 'slide_from_bottom',
+        headerShown: false,
+      }} />
+      <Stack.Screen name="moveTaskModal" options={{
+        presentation: 'transparentModal',
+        animation: 'fade',
+        headerShown: false,
+      }} />
+      <Stack.Screen name="deleteSectionModal" options={{
+        presentation: 'transparentModal',
+        animation: 'fade',
+        headerShown: false,
+      }} />
+      <Stack.Screen name="sectionOptionsModal" options={{
+        presentation: 'transparentModal',
+        animation: 'fade',
+        headerShown: false,
+      }} />
     </Stack>
   );
 } 

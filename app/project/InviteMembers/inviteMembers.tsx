@@ -14,6 +14,14 @@ interface SelectedMember {
   email: string;
 }
 
+interface ProjectMember {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  role: string;
+  status: string;
+}
+
 export default function InviteMembersScreen() {
   const router = useRouter();
   const { projectId, projectName } = useLocalSearchParams<{ 
@@ -30,6 +38,28 @@ export default function InviteMembersScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
+  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+
+  // Fetch project members when component mounts
+  useEffect(() => {
+    const fetchProjectMembers = async () => {
+      if (!projectId) return;
+      
+      try {
+        setIsLoadingMembers(true);
+        const members = await ProjectService.getProjectMembers(projectId);
+        setProjectMembers(members);
+      } catch (error) {
+        console.error('Error fetching project members:', error);
+        setProjectMembers([]);
+      } finally {
+        setIsLoadingMembers(false);
+      }
+    };
+
+    fetchProjectMembers();
+  }, [projectId]);
 
   // Search for users when search query changes
   useEffect(() => {
@@ -67,6 +97,12 @@ export default function InviteMembersScreen() {
     // Don't allow inviting yourself
     if (user && selectedUser.id === user.id) {
       Alert.alert('Información', 'No puedes invitarte a ti mismo al proyecto');
+      return;
+    }
+
+    // Don't allow inviting users who are already members
+    if (projectMembers.some(member => member.id === selectedUser.id)) {
+      Alert.alert('Información', 'Esta persona ya es miembro del proyecto');
       return;
     }
 
@@ -143,6 +179,7 @@ export default function InviteMembersScreen() {
   const renderSearchResult = (searchUser: UserSearchResult, index: number) => {
     const isAlreadySelected = selectedMembers.some(member => member.id === searchUser.id);
     const isCurrentUser = !!(user && searchUser.id === user.id);
+    const isAlreadyMember = projectMembers.some(member => member.id === searchUser.id);
     
     return (
       <TouchableOpacity 
@@ -154,10 +191,11 @@ export default function InviteMembersScreen() {
             borderBottomColor: theme.separator,
             borderBottomWidth: index < searchResults.length - 1 ? 1 : 0
           },
-          isCurrentUser && styles.currentUserResult
+          isCurrentUser && styles.currentUserResult,
+          isAlreadyMember && styles.alreadyMemberResult
         ]}
         onPress={() => handleSelectMember(searchUser)}
-        disabled={isCurrentUser || isInviting}
+        disabled={isCurrentUser || isInviting || isAlreadyMember}
       >
         {/* Avatar */}
         <View style={styles.searchResultAvatar}>
@@ -174,16 +212,21 @@ export default function InviteMembersScreen() {
         <View style={styles.searchResultInfo}>
           <Text style={[
             styles.searchResultName, 
-            { color: isCurrentUser ? theme.icon : theme.text }
+            { color: isCurrentUser || isAlreadyMember ? theme.icon : theme.text }
           ]}>
-            {searchUser.fullName} {isCurrentUser && '(Usted)'}
+            {searchUser.fullName} {isCurrentUser && '(Usted)'} {isAlreadyMember && '(Ya es miembro)'}
           </Text>
           <Text style={[styles.searchResultEmail, { color: theme.icon }]}>
             {searchUser.email}
           </Text>
-          {isAlreadySelected && (
+          {isAlreadySelected && !isAlreadyMember && (
             <Text style={[styles.selectedLabel, { color: theme.green }]}>
               ✓ Será invitado
+            </Text>
+          )}
+          {isAlreadyMember && (
+            <Text style={[styles.selectedLabel, { color: theme.orange }]}>
+              Ya es miembro del proyecto
             </Text>
           )}
         </View>
@@ -192,6 +235,8 @@ export default function InviteMembersScreen() {
         <View style={styles.actionIcon}>
           {isCurrentUser ? (
             <Ionicons name="person" size={20} color={theme.icon} />
+          ) : isAlreadyMember ? (
+            <Ionicons name="checkmark-circle" size={20} color={theme.orange} />
           ) : isAlreadySelected ? (
             <Ionicons name="remove-circle" size={20} color={theme.red} />
           ) : (
@@ -483,6 +528,10 @@ const styles = StyleSheet.create({
   },
   currentUserResult: {
     opacity: 0.5,
+  },
+  alreadyMemberResult: {
+    opacity: 0.5,
+    backgroundColor: '#f0f0f0',
   },
   searchResultAvatar: {
     position: 'relative',
