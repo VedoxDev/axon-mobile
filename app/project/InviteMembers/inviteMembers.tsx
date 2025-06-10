@@ -7,6 +7,8 @@ import { Colors } from '@/constants/Colors';
 import { ProjectService } from '@/services/projectService';
 import { UserService, UserSearchResult } from '@/services/userService';
 import { useAuth } from '@/app/auth/AuthProvider';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { CustomAlert } from '@/components/CustomAlert';
 
 interface SelectedMember {
   id: string;
@@ -31,6 +33,7 @@ export default function InviteMembersScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const { user } = useAuth();
+  const { showAlert, alertConfig, hideAlert } = useCustomAlert();
   
   const [selectedMembers, setSelectedMembers] = useState<SelectedMember[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,13 +99,23 @@ export default function InviteMembersScreen() {
 
     // Don't allow inviting yourself
     if (user && selectedUser.id === user.id) {
-      Alert.alert('Información', 'No puedes invitarte a ti mismo al proyecto');
+      showAlert({
+        title: 'Información',
+        message: 'No puedes invitarte a ti mismo al proyecto',
+        type: 'info',
+        buttons: [{ text: 'Entendido', style: 'default' }]
+      });
       return;
     }
 
     // Don't allow inviting users who are already members
     if (projectMembers.some(member => member.id === selectedUser.id)) {
-      Alert.alert('Información', 'Esta persona ya es miembro del proyecto');
+      showAlert({
+        title: 'Información',
+        message: 'Esta persona ya es miembro del proyecto',
+        type: 'info',
+        buttons: [{ text: 'Entendido', style: 'default' }]
+      });
       return;
     }
 
@@ -131,7 +144,12 @@ export default function InviteMembersScreen() {
 
   const handleInviteMembers = async () => {
     if (selectedMembers.length === 0) {
-      Alert.alert('Información', 'Selecciona al menos una persona para invitar');
+      showAlert({
+        title: 'Información',
+        message: 'Selecciona al menos una persona para invitar',
+        type: 'warning',
+        buttons: [{ text: 'Entendido', style: 'default' }]
+      });
       return;
     }
 
@@ -145,32 +163,73 @@ export default function InviteMembersScreen() {
 
       const invitationResults = await Promise.allSettled(invitationPromises);
       
-      // Count successful invitations
-      const successfulInvitations = invitationResults.filter(result => result.status === 'fulfilled').length;
-      const failedInvitations = invitationResults.filter(result => result.status === 'rejected').length;
+      // Analyze results in detail
+      let successfulInvitations = 0;
+      let pendingInvitations = 0;
+      let failedInvitations = 0;
       
-      // Show success message
-      let successMessage = '';
-      if (failedInvitations === 0) {
-        successMessage = `${successfulInvitations} invitaciones enviadas correctamente a "${projectName}"`;
-      } else {
-        successMessage = `${successfulInvitations} de ${selectedMembers.length} invitaciones enviadas correctamente a "${projectName}"`;
+      invitationResults.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          successfulInvitations++;
+        } else if (result.status === 'rejected') {
+          // Error 400 means already has invitation
+          const error = result.reason;
+          if (error?.response?.status === 400) {
+            pendingInvitations++;
+          } else {
+            failedInvitations++;
+          }
+        }
+      });
+      
+      // Build success message
+      let title = 'Invitaciones Procesadas';
+      let message = '';
+      let alertType: 'success' | 'warning' | 'info' = 'success';
+      
+      if (successfulInvitations > 0) {
+        message += `✅ ${successfulInvitations} invitación${successfulInvitations === 1 ? '' : 'es'} enviada${successfulInvitations === 1 ? '' : 's'} correctamente`;
       }
       
-      Alert.alert(
-        'Éxito', 
-        successMessage,
-        [
+      if (pendingInvitations > 0) {
+        if (message) message += '\n\n';
+        message += `⏳ ${pendingInvitations} persona${pendingInvitations === 1 ? '' : 's'} ya tenía${pendingInvitations === 1 ? '' : 'n'} invitación pendiente`;
+        if (successfulInvitations === 0 && failedInvitations === 0) {
+          alertType = 'warning';
+          title = 'Invitaciones Pendientes';
+        }
+      }
+      
+      if (failedInvitations > 0) {
+        if (message) message += '\n\n';
+        message += `❌ ${failedInvitations} invitación${failedInvitations === 1 ? '' : 'es'} no se pudo${failedInvitations === 1 ? '' : 'ieron'} enviar`;
+        if (successfulInvitations === 0) {
+          alertType = 'warning';
+          title = 'Error en Invitaciones';
+        }
+      }
+      
+      showAlert({
+        title,
+        message,
+        type: alertType,
+        buttons: [
           {
-            text: 'OK',
+            text: 'Perfecto',
+            style: 'default',
             onPress: () => router.back()
           }
         ]
-      );
+      });
       
     } catch (error: any) {
       console.error('Error inviting members:', error);
-      Alert.alert('Error', error.message || 'No se pudieron enviar las invitaciones. Inténtalo de nuevo.');
+      showAlert({
+        title: 'Error',
+        message: error.message || 'No se pudieron enviar las invitaciones. Por favor inténtalo de nuevo.',
+        type: 'error',
+        buttons: [{ text: 'Reintentar', style: 'default' }]
+      });
     } finally {
       setIsInviting(false);
     }
@@ -411,6 +470,16 @@ export default function InviteMembersScreen() {
           </ScrollView>
         </View>
       </Modal>
+      
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 }

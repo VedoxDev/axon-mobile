@@ -3,11 +3,13 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, Stack } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Colors } from '../constants/Colors';
 import { useAuth } from './auth/AuthProvider';
+import { CustomAlert } from '@/components/CustomAlert';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 
 const logo = require('@/assets/images/logo.png');
 
@@ -15,6 +17,7 @@ export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const { login, user } = useAuth();
+  const { alertConfig, showError, hideAlert } = useCustomAlert();
 
   // Form state
   const [email, setEmail] = useState('');
@@ -38,15 +41,15 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     // Basic validation (although button should be disabled if these conditions aren't met)
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showError('Por favor ingresa tu email', 'Error');
       return;
     }
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      showError('Por favor ingresa tu contraseña', 'Error');
       return;
     }
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+      showError('Por favor ingresa un email válido', 'Error');
       return;
     }
 
@@ -60,9 +63,9 @@ export default function LoginScreen() {
       
       // Handle specific error cases
       if (error.message.includes('Invalid email or password')) {
-        Alert.alert('Error de inicio de sesión', 'Usuario o contraseña incorrectos, intenta de nuevo');
+        showError('Usuario o contraseña incorrectos, intenta de nuevo', 'Error de inicio de sesión');
       } else {
-        Alert.alert('Error de inicio de sesión', error.message);
+        showError(error.message, 'Error de inicio de sesión');
       }
     } finally {
       setIsLoading(false);
@@ -191,6 +194,16 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Custom Alert */}
+        <CustomAlert
+          visible={alertConfig.visible}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          type={alertConfig.type}
+          buttons={alertConfig.buttons}
+          onDismiss={hideAlert}
+        />
 
       </View>
     </TouchableWithoutFeedback>

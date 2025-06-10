@@ -10,6 +10,8 @@ import React from 'react';
 import AnimatedProjectButton from '@/components/AnimatedProjectButton';
 import { Project } from '@/services/projectService';
 import { useProjectContext } from '@/contexts/ProjectContext';
+import { AnnouncementService, ProjectAnnouncement } from '@/services/announcementService';
+import { useFocusEffect } from '@react-navigation/native';
 
 
 const SIDEBAR_WIDTH = 70;
@@ -38,6 +40,16 @@ const SAMPLE_MEMBERS = [
   { id: '4', name: 'Ana', avatar: 'A' },
 ];
 
+// Role translation function
+const translateRole = (role: string) => {
+  const roleTranslations = {
+    'owner': 'Propietario',
+    'admin': 'Colaborador', 
+    'member': 'Miembro'
+  };
+  return roleTranslations[role as keyof typeof roleTranslations] || role;
+};
+
 export default function HomeLayout() {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,9 +60,74 @@ export default function HomeLayout() {
   const [showProjectDetailsCard, setShowProjectDetailsCard] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+  const [latestAnnouncement, setLatestAnnouncement] = useState<ProjectAnnouncement | null>(null);
+  const [announcementCache, setAnnouncementCache] = useState<{[projectId: string]: {announcement: ProjectAnnouncement | null, timestamp: number}}>({});
+  const [loadingAnnouncement, setLoadingAnnouncement] = useState(false);
 
   // Use the project context instead of the hook directly
   const { projects, isLoading, error, refetch } = useProjectContext();
+
+  // Cache timeout: 5 minutes
+  const CACHE_TIMEOUT = 5 * 60 * 1000;
+
+  // Refresh projects when returning to home screen
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('Home screen focused - refreshing projects');
+      refetch();
+      // Clear announcement cache when returning to home to ensure fresh data
+      setAnnouncementCache({});
+    }, []) // Remove refetch dependency to prevent infinite loops
+  );
+
+  // Fetch latest announcement for selected project
+  const fetchLatestAnnouncement = React.useCallback(async (projectId: string) => {
+    const now = Date.now();
+    const cached = announcementCache[projectId];
+
+    // Check if we have recent cached data
+    if (cached && (now - cached.timestamp) < CACHE_TIMEOUT) {
+      console.log(`Using cached announcement for project ${projectId}`);
+      setLatestAnnouncement(cached.announcement);
+      return;
+    }
+
+    try {
+      setLoadingAnnouncement(true);
+      console.log(`Fetching announcements for project ${projectId}`);
+      
+      const announcements = await AnnouncementService.getProjectAnnouncements(projectId);
+      
+      // Get the most recent announcement (they're already sorted by newest first)
+      const latestAnn = announcements.length > 0 ? announcements[0] : null;
+      
+      // Update cache
+      setAnnouncementCache(prev => ({
+        ...prev,
+        [projectId]: {
+          announcement: latestAnn,
+          timestamp: now
+        }
+      }));
+      
+      setLatestAnnouncement(latestAnn);
+    } catch (error: any) {
+      console.error('Error fetching latest announcement:', error);
+      // Set null announcement on error (will show "No hay anuncios recientes")
+      setLatestAnnouncement(null);
+      
+      // Cache the null result to avoid repeated failed calls
+      setAnnouncementCache(prev => ({
+        ...prev,
+        [projectId]: {
+          announcement: null,
+          timestamp: now
+        }
+      }));
+    } finally {
+      setLoadingAnnouncement(false);
+    }
+  }, [announcementCache]);
 
   const sidebarWidth = useSharedValue(SIDEBAR_WIDTH);
   const contentTranslate = useSharedValue(0);
@@ -106,12 +183,18 @@ export default function HomeLayout() {
       projectsTitleOpacity.value = withTiming(1, { duration: 350 });
       projectDetailsTranslateY.value = withTiming(0, { duration: 400 });
       projectDetailsOpacity.value = withTiming(1, { duration: 400 });
+      
+      // Fetch latest announcement for this project
+      fetchLatestAnnouncement(selectedProject.id);
     } else {
       mensajesTextOpacity.value = withTiming(0, { duration: 350 });
       projectsTitleOpacity.value = withTiming(0, { duration: 350 });
       projectDetailsTranslateY.value = withTiming(500, { duration: 400 });
       projectDetailsOpacity.value = withTiming(0, { duration: 400 });
       setTimeout(() => setShowProjectDetailsCard(false), 400);
+      
+      // Clear latest announcement when no project is selected
+      setLatestAnnouncement(null);
     }
   }, [selectedProject]);
 
@@ -208,7 +291,7 @@ export default function HomeLayout() {
                   style={[styles.settingsButtonExpanded, { backgroundColor: theme.settingsButton }]}
                   onPress={() => router.push('/project/Settings/settingsScreen')}
                 >
-                  <Ionicons name="settings-outline" size={24} color={theme.settingsIcon} />
+                  <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </Animated.View>
               <Animated.View style={[projectsTitleAnimStyle, { width: '100%', alignItems: 'flex-start' }]}>
@@ -313,7 +396,7 @@ export default function HomeLayout() {
                   style={[styles.sidebarButton, { backgroundColor: theme.settingsButton, marginTop: 20 }]}
                   onPress={() => router.push('/project/Settings/settingsScreen')}
                 >
-                  <Ionicons name="settings-outline" size={24} color={theme.settingsIcon} />
+                  <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </Animated.ScrollView>
             </>
@@ -332,21 +415,21 @@ export default function HomeLayout() {
                   <View style={styles.projectTitleContainer}>
                     <Text style={[styles.projectTitle, { color: theme.text }]}>{selectedProject?.name}</Text>
                     <View style={[styles.statusBadge, { backgroundColor: theme.primary + '20' }]}>
-                      <Text style={[styles.statusText, { color: theme.primary }]}>{selectedProject?.role}</Text>
+                      <Text style={[styles.statusText, { color: theme.primary }]}>{translateRole(selectedProject?.role || 'member')}</Text>
                     </View>
                   </View>
                   
-                  {/* Invite Members Button - Only show for admin/owner roles */}
-                  {selectedProject?.role && selectedProject.role !== 'member' && (
+                  <View style={styles.projectButtonsContainer}>
+                    {/* View Members Button - Always visible */}
                     <TouchableOpacity 
-                      style={[styles.inviteMembersButtonTop, { 
-                        backgroundColor: theme.primary + '15',
-                        borderColor: theme.primary + '40'
+                      style={[styles.viewMembersButtonTop, { 
+                        backgroundColor: theme.gray + '15',
+                        borderColor: theme.orange
                       }]}
                       onPress={() => {
                         if (selectedProject) {
                           router.push({
-                            pathname: '/project/InviteMembers/inviteMembers',
+                            pathname: '/project/Members/membersScreen',
                             params: {
                               projectId: selectedProject.id,
                               projectName: selectedProject.name
@@ -355,17 +438,69 @@ export default function HomeLayout() {
                         }
                       }}
                     >
-                      <Ionicons name="person-add" size={16} color={theme.primary} />
+                      <Ionicons name="people" size={16} color={theme.gray} />
                     </TouchableOpacity>
-                  )}
+                    
+                    {/* Invite Members Button - Only show for admin/owner roles */}
+                    {selectedProject?.role && selectedProject.role !== 'member' && (
+                      <TouchableOpacity 
+                        style={[styles.inviteMembersButtonTop, { 
+                          backgroundColor: theme.primary + '15',
+                          borderColor: theme.primary + '40'
+                        }]}
+                        onPress={() => {
+                          if (selectedProject) {
+                            router.push({
+                              pathname: '/project/InviteMembers/inviteMembers',
+                              params: {
+                                projectId: selectedProject.id,
+                                projectName: selectedProject.name
+                              }
+                            });
+                          }
+                        }}
+                      >
+                        <Ionicons name="person-add" size={16} color={theme.primary} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
                 
-                <Text style={[styles.projectDescription, { color: theme.gray }]}>{selectedProject?.description}</Text>
+                {selectedProject?.description && (
+                  <Text style={[styles.projectDescription, { color: theme.gray }]}>{selectedProject?.description}</Text>
+                )}
                 
-                <View style={[styles.projectStatus, { backgroundColor: theme.card }]}>
+                <View style={[
+                  styles.projectStatus, 
+                  { backgroundColor: theme.card },
+                  !selectedProject?.description && styles.projectStatusExpanded
+                ]}>
                   <View style={styles.statusItem}>
-                    <Text style={[styles.statusLabel, { color: theme.gray }]}>Estado</Text>
-                    <Text style={[styles.statusValue, { color: theme.text }]}>{selectedProject?.status}</Text>
+                    <Text style={[styles.statusLabel, { color: theme.gray, textAlign: 'left' }]}>📣 Último anuncio</Text>
+                    {loadingAnnouncement ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                        <ActivityIndicator size="small" color={theme.gray} />
+                        <Text style={[styles.statusValue, { color: theme.gray, fontStyle: 'italic' }]}>
+                          Cargando anuncio...
+                        </Text>
+                      </View>
+                    ) : latestAnnouncement ? (
+                      <Text style={[
+                        styles.statusValue, 
+                        { color: theme.text },
+                        !selectedProject?.description && styles.statusValueExpanded
+                      ]} numberOfLines={!selectedProject?.description ? 4 : 2} ellipsizeMode="tail">
+                        {latestAnnouncement.title}
+                      </Text>
+                    ) : (
+                      <Text style={[
+                        styles.statusValue, 
+                        { color: theme.gray, fontStyle: 'italic' },
+                        !selectedProject?.description && styles.statusValueExpanded
+                      ]} numberOfLines={!selectedProject?.description ? 4 : 2} ellipsizeMode="tail">
+                        No hay anuncios recientes
+                      </Text>
+                    )}
                   </View>
                 </View>
 
@@ -406,6 +541,42 @@ export default function HomeLayout() {
                   >
                     <Ionicons name="chatbubble" size={20} color="#fff" />
                     <Text style={styles.actionButtonText}>Chat</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { backgroundColor: theme.orange }]}
+                    onPress={() => {
+                      if (selectedProject) {
+                        router.push({
+                          pathname: '/project/Calendar/calendarScreen',
+                          params: {
+                            projectId: selectedProject.id,
+                            projectName: selectedProject.name
+                          }
+                        });
+                      }
+                    }}
+                  >
+                    <Ionicons name="calendar" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Itinerario</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={[styles.actionButton, { backgroundColor: theme.gray }]}
+                    onPress={() => {
+                      if (selectedProject) {
+                        router.push({
+                          pathname: '/project/Announcements/announcementsScreen',
+                          params: {
+                            projectId: selectedProject.id,
+                            projectName: selectedProject.name
+                          }
+                        });
+                      }
+                    }}
+                  >
+                    <Ionicons name="megaphone" size={20} color="#fff" />
+                    <Text style={styles.actionButtonText}>Anuncios</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
@@ -595,18 +766,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   statusItem: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   quickActions: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: 12,
     marginBottom: 20,
   },
   actionButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 12,
@@ -735,6 +905,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 6,
   },
+  projectButtonsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  viewMembersButtonTop: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
   inviteMembersButtonTop: {
     width: 36,
     height: 36,
@@ -746,5 +929,13 @@ const styles = StyleSheet.create({
   inviteMembersText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  projectStatusExpanded: {
+    minHeight: 80,
+    paddingVertical: 20,
+  },
+  statusValueExpanded: {
+    fontSize: 14,
+    lineHeight: 18,
   },
 });

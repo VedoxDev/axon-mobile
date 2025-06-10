@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
+
   ActivityIndicator,
   Dimensions,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -17,21 +19,15 @@ import { Colors } from '@/constants/Colors';
 import { callService, Call } from '@/services/callService';
 import { useUser } from '@/contexts/UserContext';
 import { API_BASE_URL } from '@/config/apiConfig';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { CustomAlert } from '@/components/CustomAlert';
 
-// For now, let's comment out complex LiveKit imports and create a basic implementation
-// import {
-//   LiveKitRoom,
-//   useTracks,
-//   useParticipants,
-//   useRoom,
-//   useLocalParticipant,
-//   AudioSession,
-//   VideoTrack,
-// } from '@livekit/react-native';
-// import { Track } from 'livekit-client';
+// Use LiveKit client for room and tracks
+import { Room, RoomEvent, RemoteParticipant, LocalParticipant, Track } from 'livekit-client';
+import { VideoTrack } from '@livekit/react-native';
 
 // Get LIVEKIT_URL from your environment or config
-const LIVEKIT_URL = 'wss://axon-68rmd4dw.livekit.cloud'; // Your actual LiveKit URL
+const LIVEKIT_URL = 'wss://axon-68rmd4dw.livekit.cloud';
 
 const { width, height } = Dimensions.get('window');
 
@@ -42,18 +38,118 @@ export default function VideoCallScreen() {
   const router = useRouter();
   const { getCurrentUserId } = useUser();
   const { callId } = useLocalSearchParams<{ callId: string }>();
+  const { showAlert, alertConfig, hideAlert } = useCustomAlert();
 
   // State
   const [call, setCall] = useState<Call | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
+  const [participants, setParticipants] = useState<RemoteParticipant[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [micMuted, setMicMuted] = useState(false);
+  const [videoMuted, setVideoMuted] = useState(false);
+  const [localVideoTrack, setLocalVideoTrack] = useState<any>(null);
+  const [remoteVideoTracks, setRemoteVideoTracks] = useState<any[]>([]);
+
+  const roomRef = useRef<Room | null>(null);
+
+  // Helper function to check if a video track is actually enabled
+  const isVideoTrackEnabled = (publication: any): boolean => {
+    return publication && publication.videoTrack && !publication.isMuted && publication.isSubscribed;
+  };
+
+  // Helper function to get user display name from participant identity
+  const getDisplayName = (participant: any, currentUserId: string | null) => {
+    // If it's the current user, return "You"
+    if (participant.identity === currentUserId) {
+      return 'Tú';
+    }
+    
+    // WORKAROUND: Use call data to get proper names while backend fixes metadata
+    if (call) {
+      // Check if this participant is the initiator
+      if (participant.identity === call.initiator.id) {
+        return `${call.initiator.nombre} ${call.initiator.apellidos}`;
+      }
+      // Check if this participant is the recipient (for direct calls)
+      if (call.recipient && participant.identity === call.recipient.id) {
+        return `${call.recipient.nombre} ${call.recipient.apellidos}`;
+      }
+    }
+    
+    // Check for metadata with displayName (when backend fixes the undefined issue)
+    if (participant.metadata) {
+      try {
+        const metadata = JSON.parse(participant.metadata);
+        if (metadata.displayName && metadata.displayName !== 'undefined undefined') {
+          return metadata.displayName; // Returns "John Smith"
+        }
+      } catch (error) {
+        console.log('Failed to parse participant metadata:', error);
+      }
+    }
+    
+    // Fallback: Check if participant.name is different from identity
+    if (participant.name && participant.name !== participant.identity && participant.name !== 'undefined undefined') {
+      return participant.name; // Returns display name if set
+    }
+    
+    // Last resort: Use first part of UUID with "User" prefix
+    const shortId = participant.identity.split('-')[0];
+    return `Usuario ${shortId}`;
+  };
 
   useEffect(() => {
     if (callId) {
+      requestPermissionsAndJoinCall();
+    }
+
+    return () => {
+      // Cleanup on unmount
+      if (roomRef.current) {
+        roomRef.current.disconnect();
+      }
+    };
+  }, [callId]);
+
+  const requestPermissionsAndJoinCall = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const permissions = [
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+        ];
+
+        const granted = await PermissionsAndroid.requestMultiple(permissions);
+        
+        if (
+          granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED &&
+          granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED
+        ) {
+          console.log('✅ Camera and microphone permissions granted');
+          joinCall();
+        } else {
+          console.log('❌ Permissions denied');
+          showAlert({
+            title: 'Permisos requeridos',
+            message: 'Se requieren permisos de cámara y micrófono para las videollamadas.',
+            type: 'warning',
+            buttons: [
+              { text: 'Cancelar', style: 'cancel', onPress: () => router.back() },
+              { text: 'Reintentar', style: 'default', onPress: requestPermissionsAndJoinCall }
+            ]
+          });
+        }
+      } catch (error) {
+        console.error('Permission request error:', error);
+        joinCall(); // Continue anyway
+      }
+    } else {
       joinCall();
     }
-  }, [callId]);
+  };
 
   const joinCall = async () => {
     if (!callId) {
@@ -63,68 +159,211 @@ export default function VideoCallScreen() {
     }
 
     try {
-      // 🔍 DETAILED DEBUG LOGGING
-      console.log('🎥 DEBUGGING CALL ID:');
-      console.log('Raw callId:', callId);
-      console.log('CallId type:', typeof callId);
-      console.log('CallId length:', callId.length);
-      console.log('CallId JSON:', JSON.stringify(callId));
-      console.log('CallId trimmed:', callId.trim());
-      console.log('CallId char codes:', Array.from(callId).map(c => c.charCodeAt(0)));
+      console.log('🎥 Joining call with ID:', callId);
       
-      const cleanCallId = callId.trim();
-      console.log('🎥 Joining call with cleaned ID:', cleanCallId);
-      
-      const { call: callData, token: callToken } = await callService.joinCall(cleanCallId);
+      const { call: callData, token: callToken } = await callService.joinCall(callId.trim());
       setCall(callData);
       setToken(callToken);
       console.log('✅ Got call data and token');
+
+      // Connect to LiveKit using core client
+      await connectToLiveKit(callToken, callData);
+      
     } catch (error: any) {
       console.error('❌ Failed to join call:', error);
-      console.error('❌ Error details:', error.response?.data);
-      setError(error.message || 'Failed to join call');
-      Alert.alert('Error', 'Failed to join call. Please try again.');
+      setError(error.message || 'No se pudo unir a la llamada');
+      showAlert({
+        title: 'Error',
+        message: 'No se pudo unir a la llamada. Por favor inténtalo de nuevo.',
+        type: 'error',
+        buttons: [{ text: 'Entendido', style: 'default' }]
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const leaveCall = async () => {
+  const connectToLiveKit = async (token: string, callData: Call) => {
     try {
-      if (callId) {
-        await callService.leaveCall(callId);
+      console.log('🔗 Connecting to LiveKit...');
+      
+      const newRoom = new Room();
+      await newRoom.connect(LIVEKIT_URL, token);
+
+      console.log('✅ Connected to LiveKit room');
+      setRoom(newRoom);
+      setIsConnected(true);
+      roomRef.current = newRoom;
+
+      // Get existing participants when joining
+      const existingParticipants = Array.from(newRoom.remoteParticipants.values());
+      console.log('👥 Existing participants:', existingParticipants.length);
+      setParticipants(existingParticipants);
+
+      // Check for existing video tracks from participants already in the room
+      existingParticipants.forEach((participant) => {
+        console.log('👤 Checking existing participant:', participant.identity);
+        participant.videoTrackPublications.forEach((publication) => {
+          if (publication.videoTrack && publication.isSubscribed) {
+            console.log('🎥 Found existing video track from:', participant.identity);
+            setRemoteVideoTracks(prev => [...prev, { publication, participant }]);
+          }
+        });
+      });
+
+      // Set up event listeners
+      newRoom.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+        console.log('👤 Participant connected:', participant.identity);
+        setParticipants(prev => [...prev, participant]);
+      });
+
+      newRoom.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+        console.log('👤 Participant disconnected:', participant.identity);
+        setParticipants(prev => prev.filter(p => p.identity !== participant.identity));
+      });
+
+      newRoom.on(RoomEvent.TrackSubscribed, (track: any, publication: any, participant: any) => {
+        console.log('🎥 Track subscribed:', track.kind, 'from', participant.identity);
+        if (track.kind === Track.Kind.Video) {
+          console.log('📹 Adding remote video track for:', participant.identity);
+          setRemoteVideoTracks(prev => [...prev, { publication, participant }]);
+        }
+      });
+
+      newRoom.on(RoomEvent.TrackUnsubscribed, (track: any, publication: any, participant: any) => {
+        console.log('🎥 Track unsubscribed:', track.kind, 'from', participant.identity);
+        if (track.kind === Track.Kind.Video) {
+          console.log('📹 Removing remote video track for:', participant.identity);
+          setRemoteVideoTracks(prev => prev.filter(t => t.publication !== publication));
+        }
+      });
+
+      // Handle when a track is muted/unmuted (camera on/off)
+      newRoom.on(RoomEvent.TrackMuted, (publication: any, participant: any) => {
+        console.log('🔇 Track muted:', publication.kind, 'from', participant.identity);
+        if (publication.kind === Track.Kind.Video) {
+          console.log('📹 Video track muted (camera off) for:', participant.identity);
+          // Only handle remote participants (local participant is handled separately)
+          if (participant !== newRoom.localParticipant) {
+            setRemoteVideoTracks(prev => prev.filter(t => t.publication !== publication));
+          }
+        }
+      });
+
+      newRoom.on(RoomEvent.TrackUnmuted, (publication: any, participant: any) => {
+        console.log('🔊 Track unmuted:', publication.kind, 'from', participant.identity);
+        if (publication.kind === Track.Kind.Video) {
+          console.log('📹 Video track unmuted (camera on) for:', participant.identity);
+          // Only add remote participants to remote video tracks (not local participant)
+          if (participant !== newRoom.localParticipant) {
+            setRemoteVideoTracks(prev => {
+              // Check if already exists to prevent duplicates
+              const exists = prev.some(t => t.publication === publication);
+              if (!exists) {
+                return [...prev, { publication, participant }];
+              }
+              return prev;
+            });
+          }
+        }
+      });
+
+      newRoom.on(RoomEvent.LocalTrackPublished, (publication: any) => {
+        console.log('📡 Local track published:', publication.kind);
+        if (publication.kind === Track.Kind.Video) {
+          console.log('📹 Setting local video track');
+          setLocalVideoTrack(publication);
+        }
+      });
+
+      // Handle local track unpublished (when user turns off camera)
+      newRoom.on(RoomEvent.LocalTrackUnpublished, (publication: any) => {
+        console.log('📡 Local track unpublished:', publication.kind);
+        if (publication.kind === Track.Kind.Video) {
+          console.log('📹 Removing local video track');
+          setLocalVideoTrack(null);
+        }
+      });
+
+      newRoom.on(RoomEvent.Disconnected, (reason: any) => {
+        console.log('❌ Disconnected from room:', reason);
+        setIsConnected(false);
+        setRoom(null);
+      });
+
+      // Enable audio automatically, camera based on call type
+      try {
+        await newRoom.localParticipant.setMicrophoneEnabled(true);
+        // Only enable camera for video calls, keep off for audio calls
+        const shouldEnableCamera = !callData.audioOnly;
+        await newRoom.localParticipant.setCameraEnabled(shouldEnableCamera);
+        setVideoMuted(!shouldEnableCamera); // Set video muted state based on call type
+        console.log(`📡 Audio enabled, camera ${shouldEnableCamera ? 'enabled' : 'disabled'} (audioOnly: ${callData.audioOnly})`);
+      } catch (trackError) {
+        console.error('❌ Error enabling tracks:', trackError);
+        // Continue even if track enabling fails
       }
-      router.back();
+
     } catch (error) {
-      console.error('Failed to leave call:', error);
-      // Still navigate back even if API call fails
-      router.back();
+      console.error('❌ Failed to connect to LiveKit:', error);
+      setError('No se pudo conectar a la videollamada');
     }
   };
 
-  const endCall = async () => {
-    if (!call || !callId) return;
-
-    Alert.alert(
-      'End Call',
-      'Are you sure you want to end this call for everyone?',
-      [
-        { text: 'Cancel', style: 'cancel' },
+  const leaveCall = async () => {
+    showAlert({
+      title: 'Salir de la llamada',
+      message: '¿Estás seguro de que quieres salir de esta llamada?',
+      type: 'warning',
+      buttons: [
+        { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'End Call',
+          text: 'Salir',
           style: 'destructive',
           onPress: async () => {
             try {
-              await callService.endCall(callId);
+              if (roomRef.current) {
+                roomRef.current.disconnect();
+              }
+              if (callId) {
+                await callService.leaveCall(callId);
+                console.log('✅ Left call successfully - backend will end call automatically if last person');
+              }
               router.back();
             } catch (error) {
-              console.error('Failed to end call:', error);
-              Alert.alert('Error', 'Failed to end call');
+              console.error('Failed to leave call:', error);
+              router.back();
             }
           },
         },
       ]
-    );
+    });
+  };
+
+  // Removed the endCall function - everyone just leaves, last person ends the call automatically
+
+  const toggleMute = async () => {
+    if (room && room.localParticipant) {
+      try {
+        await room.localParticipant.setMicrophoneEnabled(micMuted);
+        setMicMuted(!micMuted);
+        console.log('🎤 Microphone toggled:', !micMuted);
+      } catch (error) {
+        console.error('Failed to toggle microphone:', error);
+      }
+    }
+  };
+
+  const toggleCamera = async () => {
+    if (room && room.localParticipant) {
+      try {
+        await room.localParticipant.setCameraEnabled(videoMuted);
+        setVideoMuted(!videoMuted);
+        console.log('📹 Camera toggled:', !videoMuted);
+      } catch (error) {
+        console.error('Failed to toggle camera:', error);
+      }
+    }
   };
 
   if (isLoading) {
@@ -133,51 +372,12 @@ export default function VideoCallScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.tint} />
           <Text style={[styles.loadingText, { color: theme.text }]}>
-            Connecting to call...
+            Conectando a la llamada...
           </Text>
         </View>
       </SafeAreaView>
     );
   }
-
-  // 🔍 DEBUG ENDPOINTS TEST FUNCTION
-  const testDebugEndpoints = async () => {
-    if (!callId) return;
-    
-    try {
-      const token = await AsyncStorage.getItem('access_token');
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      };
-      
-      console.log('🔬 Testing debug endpoints for callId:', callId);
-      
-      // Test debug endpoint
-      const debugResponse = await fetch(`${API_BASE_URL}/calls/debug/${callId}`, {
-        method: 'GET',
-        headers
-      });
-      
-      console.log('🔬 Debug GET response status:', debugResponse.status);
-      const debugData = await debugResponse.text();
-      console.log('🔬 Debug GET response:', debugData);
-      
-      // Test join-debug endpoint
-      const joinDebugResponse = await fetch(`${API_BASE_URL}/calls/join-debug/${callId}`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ audioOnly: false })
-      });
-      
-      console.log('🔬 Join-debug POST response status:', joinDebugResponse.status);
-      const joinDebugData = await joinDebugResponse.text();
-      console.log('🔬 Join-debug POST response:', joinDebugData);
-      
-    } catch (error) {
-      console.error('🔬 Debug endpoints error:', error);
-    }
-  };
 
   if (error || !token || !call) {
     return (
@@ -185,7 +385,7 @@ export default function VideoCallScreen() {
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle" size={48} color="#F44336" />
           <Text style={[styles.errorText, { color: theme.text }]}>
-            {error || 'Failed to load call'}
+            {error || 'No se pudo cargar la llamada'}
           </Text>
           <TouchableOpacity 
             style={[styles.retryButton, { backgroundColor: theme.tint }]}
@@ -195,85 +395,77 @@ export default function VideoCallScreen() {
               joinCall();
             }}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.retryButton, { backgroundColor: '#FF9800', marginTop: 10 }]}
-            onPress={testDebugEndpoints}
-          >
-            <Text style={styles.retryButtonText}>Test Debug Endpoints</Text>
+            <Text style={styles.retryButtonText}>Reintentar</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  // For now, render the call UI directly without LiveKit wrapper
-  return (
-    <CallRoomView 
-      call={call} 
-      callId={callId} 
-      onLeave={leaveCall} 
-      onEnd={endCall}
-      getCurrentUserId={getCurrentUserId}
-    />
-  );
-}
-
-// Component that renders the actual call UI inside LiveKitRoom
-interface CallRoomViewProps {
-  call: Call;
-  callId: string;
-  onLeave: () => void;
-  onEnd: () => void;
-  getCurrentUserId: () => string | null;
-}
-
-function CallRoomView({ call, callId, onLeave, onEnd, getCurrentUserId }: CallRoomViewProps) {
-  // State for controls
-  const [micMuted, setMicMuted] = useState(false);
-  const [videoMuted, setVideoMuted] = useState(false);
-
-  const toggleMute = () => {
-    setMicMuted(!micMuted);
-    // TODO: Integrate with LiveKit when hooks are working
-    console.log('Toggle mute:', !micMuted);
-  };
-
-  const toggleCamera = () => {
-    setVideoMuted(!videoMuted);
-    // TODO: Integrate with LiveKit when hooks are working
-    console.log('Toggle camera:', !videoMuted);
-  };
-
-  const switchCamera = () => {
-    // TODO: Integrate with LiveKit when hooks are working
-    console.log('Switch camera');
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#000' }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: 'rgba(0,0,0,0.3)' }]}>
         <Text style={styles.headerTitle}>
-          {call.title || 'Video Call'}
+          Llamada en curso
         </Text>
         <Text style={styles.connectionStatus}>
-          🟢 Connected to call
+          {participants.length + 1} participante(s)
         </Text>
       </View>
 
-      {/* Video Placeholder */}
+      {/* Video Area */}
       <View style={styles.participantsContainer}>
-        <View style={styles.noVideoContainer}>
-          <Ionicons name="videocam" size={80} color="#FFF" />
-          <Text style={styles.noVideoText}>
-            Video call active
-          </Text>
-          <Text style={styles.noVideoSubText}>
-            LiveKit video will appear here
-          </Text>
-        </View>
+        {isConnected ? (
+          <View style={styles.videoGrid}>
+            {/* Local video */}
+            <View style={styles.videoContainer}>
+              {localVideoTrack && room?.localParticipant && !videoMuted ? (
+                  <>
+                    <VideoTrack style={styles.video} trackRef={{ participant: room.localParticipant, publication: localVideoTrack, source: Track.Source.Camera }} />
+                    <Text style={styles.videoLabel}>{room ? getDisplayName(room.localParticipant, getCurrentUserId()) : 'You'}</Text>
+                  </>
+              ) : (
+                <View style={[styles.video, { backgroundColor: '#333' }]}>
+                  <Ionicons name="person" size={40} color="#FFF" />
+                  <Text style={styles.videoLabel}>{room ? getDisplayName(room.localParticipant, getCurrentUserId()) + ' (Sin video)' : 'Tú (Sin video)'}</Text>
+                </View>
+              )}
+            </View>
+            
+            {/* Remote videos */}
+            {remoteVideoTracks.filter(remoteVideo => isVideoTrackEnabled(remoteVideo.publication)).map((remoteVideo, index) => (
+              <View key={`${remoteVideo.participant.identity}-${index}`} style={styles.videoContainer}>
+                <VideoTrack 
+                  style={styles.video} 
+                  trackRef={{ participant: remoteVideo.participant, publication: remoteVideo.publication, source: Track.Source.Camera }} 
+                />
+                <Text style={styles.videoLabel}>{getDisplayName(remoteVideo.participant, getCurrentUserId())}</Text>
+              </View>
+            ))}
+            
+            {/* Participants without video */}
+            {participants.filter(p => 
+              !remoteVideoTracks.some(rv => 
+                rv.participant.identity === p.identity && isVideoTrackEnabled(rv.publication)
+              )
+            ).map((participant) => (
+              <View key={participant.identity} style={styles.videoContainer}>
+                <View style={[styles.video, { backgroundColor: '#555' }]}>
+                  <Ionicons name="person" size={40} color="#FFF" />
+                  <Text style={styles.videoLabel}>{getDisplayName(participant, getCurrentUserId())} (Sin video)</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.noVideoContainer}>
+            <Ionicons name="videocam-off" size={80} color="#FFF" />
+            <Text style={styles.noVideoText}>
+              Conectando al video...
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Controls */}
@@ -281,6 +473,7 @@ function CallRoomView({ call, callId, onLeave, onEnd, getCurrentUserId }: CallRo
         <TouchableOpacity 
           style={[styles.controlButton, micMuted && styles.controlButtonMuted]}
           onPress={toggleMute}
+          disabled={!isConnected}
         >
           <Ionicons 
             name={micMuted ? "mic-off" : "mic"} 
@@ -292,6 +485,7 @@ function CallRoomView({ call, callId, onLeave, onEnd, getCurrentUserId }: CallRo
         <TouchableOpacity 
           style={[styles.controlButton, videoMuted && styles.controlButtonMuted]}
           onPress={toggleCamera}
+          disabled={!isConnected}
         >
           <Ionicons 
             name={videoMuted ? "videocam-off" : "videocam"} 
@@ -301,28 +495,14 @@ function CallRoomView({ call, callId, onLeave, onEnd, getCurrentUserId }: CallRo
         </TouchableOpacity>
 
         <TouchableOpacity 
-          style={styles.controlButton}
-          onPress={switchCamera}
-        >
-          <Ionicons name="camera-reverse" size={24} color="#FFF" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
           style={[styles.controlButton, styles.leaveButton]}
-          onPress={onLeave}
+          onPress={leaveCall}
         >
           <Ionicons name="call" size={24} color="#FFF" />
         </TouchableOpacity>
-
-        {call.initiator.id === getCurrentUserId() && (
-          <TouchableOpacity 
-            style={[styles.controlButton, styles.endButton]}
-            onPress={onEnd}
-          >
-            <Ionicons name="stop" size={24} color="#FFF" />
-          </TouchableOpacity>
-        )}
       </View>
+      
+      <CustomAlert {...alertConfig} onDismiss={hideAlert} />
     </SafeAreaView>
   );
 }
@@ -377,25 +557,34 @@ const styles = StyleSheet.create({
   },
   participantsContainer: {
     flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  participantContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
   },
-  fullScreen: {
-    width: width,
-    height: height - 200,
+  connectedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(76,175,80,0.1)',
+    margin: 20,
+    borderRadius: 12,
   },
-  halfScreen: {
-    width: width,
-    height: (height - 200) / 2,
+  connectedText: {
+    color: '#4CAF50',
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
   },
-  quarterScreen: {
-    width: width / 2,
-    height: (height - 200) / 2,
+  connectedSubText: {
+    color: '#81C784',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  participantsList: {
+    color: '#FFF',
+    fontSize: 12,
+    marginTop: 16,
+    textAlign: 'center',
   },
   noVideoContainer: {
     flex: 1,
@@ -406,48 +595,11 @@ const styles = StyleSheet.create({
     margin: 20,
     borderRadius: 12,
   },
-  participantName: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 8,
-  },
-  audioIndicator: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 12,
-    padding: 4,
-  },
-  localLabel: {
-    position: 'absolute',
-    bottom: 10,
-    left: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    fontSize: 12,
-  },
-  noParticipants: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noParticipantsText: {
-    color: '#FFF',
-    fontSize: 16,
-  },
   noVideoText: {
     color: '#FFF',
     fontSize: 18,
     fontWeight: '600',
     marginTop: 16,
-  },
-  noVideoSubText: {
-    color: '#CCC',
-    fontSize: 14,
-    marginTop: 8,
   },
   controlsContainer: {
     flexDirection: 'row',
@@ -472,7 +624,39 @@ const styles = StyleSheet.create({
   leaveButton: {
     backgroundColor: '#F44336',
   },
-  endButton: {
-    backgroundColor: '#D32F2F',
+  videoGrid: {
+    flex: 1,
+    padding: 10,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-}); 
+  videoContainer: {
+    width: '45%',
+    aspectRatio: 4/3,
+    margin: 5,
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  video: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoLabel: {
+    position: 'absolute',
+    bottom: 8,
+    left: 8,
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+});

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { chatService, Message } from '@/services/chatService';
@@ -21,6 +22,7 @@ import { UserSearchResult } from '@/services/userService';
 import { useUser } from '@/contexts/UserContext';
 import { DebugService } from '@/services/debugService';
 import { callService } from '@/services/callService';
+import { API_BASE_URL } from '@/config/apiConfig';
 
 export default function ChatScreen() {
   const colorScheme = useColorScheme();
@@ -40,9 +42,23 @@ export default function ChatScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [callStatuses, setCallStatuses] = useState<{[key: string]: string}>({});
+  const [callTypes, setCallTypes] = useState<{[key: string]: boolean}>({});
 
   const flatListRef = useRef<FlatList>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Helper function to get auth headers
+  const getAuthHeaders = async () => {
+    const token = await AsyncStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  };
 
   useEffect(() => {
     initializeChat();
@@ -133,12 +149,12 @@ export default function ChatScreen() {
           
           if (callId) {
             Alert.alert(
-              'Call Invitation',
+              'Invitación de llamada',
               message.content,
               [
-                { text: 'Decline', style: 'cancel' },
+                { text: 'Rechazar', style: 'cancel' },
                 { 
-                  text: 'Join', 
+                  text: 'Unirse', 
                   onPress: () => {
                     console.log('🎥 Joining call from notification:', callId);
                     router.push(`/call/${callId}` as any);
@@ -150,12 +166,12 @@ export default function ChatScreen() {
             console.log('❌ No call ID found in message or metadata');
             // Still show the alert but with manual input option
             Alert.alert(
-              'Call Invitation',
-              message.content + '\n\n(Call ID not found - manual input available)',
+              'Invitación de llamada',
+              message.content + '\n\n(ID de llamada no encontrado - entrada manual disponible)',
               [
-                { text: 'Decline', style: 'cancel' },
+                { text: 'Rechazar', style: 'cancel' },
                 { 
-                  text: 'Manual Join', 
+                  text: 'Unirse manualmente', 
                   onPress: () => joinCallFromInvitation(message.content)
                 }
               ]
@@ -190,7 +206,7 @@ export default function ChatScreen() {
         // Mark incoming messages as read when opening chat
         const result = await chatService.markMessagesAsRead(chatId);
         if (result.markedCount > 0) {
-          console.log(`📖 Marked ${result.markedCount} messages as read`);
+          // console.log(`📖 Marked ${result.markedCount} messages as read`);
         }
       } else if (chatType === 'project') {
         messageHistory = await chatService.getProjectMessageHistory(chatId);
@@ -212,8 +228,8 @@ export default function ChatScreen() {
     const currentUserId = getCurrentUserId();
     
     // Simple debug: Who is sending to whom
-    console.log(`📤 SENDING: User ${currentUserId} → User ${chatId}`);
-    console.log(`📤 MESSAGE: "${messageContent}"`);
+    // console.log(`📤 SENDING: User ${currentUserId} → User ${chatId}`);
+    // console.log(`📤 MESSAGE: "${messageContent}"`);
     
     if (currentUserId === chatId) {
       console.log('🚨 WARNING: Trying to send message to yourself!');
@@ -343,9 +359,9 @@ export default function ChatScreen() {
 
   // 📞 Extract call ID from call invitation message
   const extractCallId = (messageContent: string): string | null => {
-    console.log('🔍 EXTRACTING CALL ID:');
-    console.log('Raw message:', JSON.stringify(messageContent));
-    console.log('Message preview:', messageContent.substring(0, 100) + '...');
+    // console.log('🔍 EXTRACTING CALL ID:');
+    // console.log('Raw message:', JSON.stringify(messageContent));
+    // console.log('Message preview:', messageContent.substring(0, 100) + '...');
     
     // Try multiple patterns
     const patterns = [
@@ -361,10 +377,10 @@ export default function ChatScreen() {
     
     for (let i = 0; i < patterns.length; i++) {
       const pattern = patterns[i];
-      console.log(`🔍 Trying pattern ${i + 1}:`, pattern.source);
+      // console.log(`🔍 Trying pattern ${i + 1}:`, pattern.source);
       
       const matches = messageContent.match(pattern);
-      console.log(`🔍 Pattern ${i + 1} matches:`, matches);
+      // console.log(`🔍 Pattern ${i + 1} matches:`, matches);
       
       if (matches && matches.length > 0) {
         const callId = matches[0].includes('-') ? matches[0] : matches[1];
@@ -378,60 +394,118 @@ export default function ChatScreen() {
     // Last resort: look for any long alphanumeric string that might be an ID
     const fallbackPattern = /[a-f0-9]{32,}/gi;
     const fallbackMatch = messageContent.match(fallbackPattern);
-    console.log('🔍 Fallback pattern match:', fallbackMatch);
+    // console.log('🔍 Fallback pattern match:', fallbackMatch);
     
     return fallbackMatch ? fallbackMatch[0] : null;
   };
 
   // 📞 Check if message is a call invitation
   const isCallInvitation = (messageContent: string): boolean => {
-    const isCallMessage = messageContent.includes('📞') || messageContent.toLowerCase().includes('call') || messageContent.toLowerCase().includes('meeting');
-    
-    if (isCallMessage) {
-      console.log('🔍 CALL INVITATION DETECTED:');
-      console.log('Message content:', JSON.stringify(messageContent));
-      console.log('Message length:', messageContent.length);
-      console.log('Character codes:', Array.from(messageContent).map(c => `${c}(${c.charCodeAt(0)})`));
-    }
-    
-    return isCallMessage;
+    return messageContent.includes('📞') || messageContent.toLowerCase().includes('call') || messageContent.toLowerCase().includes('meeting');
   };
 
   // 📞 Handle joining call from invitation
-  const joinCallFromInvitation = (messageContent: string) => {
-    const callId = extractCallId(messageContent);
-    if (callId) {
-      console.log('🎥 Joining call from invitation:', callId);
-      router.push(`/call/${callId}` as any);
+  const joinCallFromInvitation = async (messageContent: string, callId?: string) => {
+    const extractedCallId = callId || extractCallId(messageContent);
+    if (extractedCallId) {
+      try {
+        console.log('🎥 Checking call status before joining:', extractedCallId);
+        
+        // First check if call is still active
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${API_BASE_URL}/calls/join/${extractedCallId}`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ audioOnly: false })
+        });
+        
+        if (response.ok) {
+          const { call } = await response.json();
+          
+          if (call.status === 'active') {
+            console.log('✅ Call is active, joining:', extractedCallId);
+            router.push(`/call/${extractedCallId}` as any);
+          } else {
+            console.log('⚠️ Call exists but not active, status:', call.status);
+            Alert.alert(
+              'Call Unavailable',
+              `This call has ${call.status === 'ended' ? 'ended' : 'been cancelled'}.`,
+              [{ text: 'OK' }]
+            );
+          }
+        } else {
+          // Handle different error status codes
+          if (response.status === 404 || response.status === 400) {
+            console.log('📞 Call not found or ended');
+            Alert.alert(
+              'Call Unavailable',
+              'This call has ended or is no longer available.',
+              [{ text: 'OK' }]
+            );
+          } else {
+            console.log('❌ Unexpected error response:', response.status);
+            throw new Error(`Server error: ${response.status}`);
+          }
+        }
+      } catch (error: any) {
+        console.log('❌ Network or parsing error:', error.message);
+        
+        // Don't show ugly errors for common cases
+        if (error.message?.includes('Call not found') || error.message?.includes('404')) {
+          Alert.alert(
+            'Call Unavailable',
+            'This call has ended or is no longer available.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert(
+            'Connection Error',
+            'Unable to check call status. Please check your internet connection.',
+            [{ text: 'OK' }]
+          );
+        }
+      }
     } else {
       console.log('❌ Could not extract call ID from invitation');
-      
-      // Show manual input option for testing
-      Alert.alert(
-        'Call ID Not Found',
-        'Could not extract call ID from message. Do you want to enter it manually for testing?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Manual Input',
-            onPress: () => {
-              Alert.prompt(
-                'Enter Call ID',
-                'Paste the call ID from logs:',
-                (inputCallId) => {
-                  if (inputCallId && inputCallId.trim()) {
-                    console.log('🎥 Joining call with manual ID:', inputCallId.trim());
-                    router.push(`/call/${inputCallId.trim()}` as any);
-                  }
-                },
-                'plain-text',
-                '1e152c3f-7be3-4c3d-b10b-0e19d173294d' // Default from your earlier log
-              );
-            }
-          }
-        ]
-      );
+      Alert.alert('Error', 'Could not find call information.');
     }
+  };
+
+  // 📞 Check if a call invitation is still joinable and get call type
+  const checkCallStatus = async (callId: string) => {
+    if (callStatuses[callId]) return callStatuses[callId]; // Already checked
+    
+    try {
+      const headers = await getAuthHeaders();
+      
+      // Since there might not be a status endpoint, try to join the call to check status
+      // This will tell us if the call is available without actually joining
+      const response = await fetch(`${API_BASE_URL}/calls/join/${callId}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ audioOnly: false })
+      });
+      
+      if (response.ok) {
+        const { call } = await response.json();
+        setCallStatuses(prev => ({...prev, [callId]: call.status}));
+        setCallTypes(prev => ({...prev, [callId]: call.audioOnly})); // Store if it's audio only
+        return call.status;
+      } else if (response.status === 404) {
+        // Call not found or ended
+        setCallStatuses(prev => ({...prev, [callId]: 'ended'}));
+        return 'ended';
+      } else if (response.status === 400) {
+        // Call might be ended or cancelled
+        setCallStatuses(prev => ({...prev, [callId]: 'ended'}));
+        return 'ended';
+      }
+    } catch (error) {
+      console.log('Could not check call status:', error);
+    }
+    
+    setCallStatuses(prev => ({...prev, [callId]: 'unknown'}));
+    return 'unknown';
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -441,15 +515,131 @@ export default function ChatScreen() {
     const isOwnMessage = messageSenderId === currentUserId;
     const senderDisplayName = item.senderName || (item.sender ? `${item.sender.nombre} ${item.sender.apellidos}` : '');
     const isCallInvite = isCallInvitation(item.content);
+    const callId = item.callId;
+    const callStatus = callId ? callStatuses[callId] : null;
+    const isAudioOnly = callId ? callTypes[callId] : null;
 
+    // Check call status when rendering (but only once per callId)
+    if (isCallInvite && callId && !callStatus && !callStatuses[callId]) {
+      // Don't block rendering, check asynchronously
+      checkCallStatus(callId);
+    }
+
+    const getCallStatusText = (status: string | null) => {
+      switch (status) {
+        case 'active': return 'Activa';
+        case 'ended': return 'Finalizada';
+        case 'cancelled': return 'Cancelada';
+        case 'unknown': return 'Desconocida';
+        default: return null; // Don't show status while checking
+      }
+    };
+
+    const isCallActive = callStatus === 'active';
+    const showJoinButton = isCallInvite && !isOwnMessage && (isCallActive || !callStatus);
+
+    // Modern call invitation design
+    if (isCallInvite) {
+      return (
+        <View style={[styles.messageContainer, isOwnMessage ? styles.ownMessage : styles.otherMessage]}>
+                      <View style={[
+              styles.callInvitationCard,
+              {
+                backgroundColor: theme.card,
+                borderColor: isCallActive ? '#4CAF50' : (callStatus === 'ended' || callStatus === 'cancelled') ? '#9E9E9E' : theme.tint,
+              }
+            ]}>
+              {/* Call Header */}
+              <View style={styles.callInvitationHeader}>
+                <View style={[
+                  styles.callIconContainer,
+                  { backgroundColor: isCallActive ? '#4CAF50' : (callStatus === 'ended' || callStatus === 'cancelled') ? '#9E9E9E' : theme.tint }
+                ]}>
+                  <Ionicons 
+                    name="videocam" 
+                    size={20} 
+                    color="#fff" 
+                  />
+                </View>
+                <View style={styles.callInvitationInfo}>
+                  <Text style={[styles.callInvitationTitle, { color: theme.text }]}>
+                    {isOwnMessage 
+                      ? (isAudioOnly ? "Has iniciado una llamada" : "Has iniciado una videollamada")
+                      : `${senderDisplayName || 'Alguien'} ha iniciado una ${isAudioOnly ? 'llamada' : 'videollamada'}`
+                    }
+                  </Text>
+                  {callId && getCallStatusText(callStatus) && (
+                    <Text style={[
+                      styles.callInvitationSubtitle,
+                      { 
+                        color: isCallActive ? '#4CAF50' : (callStatus === 'ended' || callStatus === 'cancelled') ? '#9E9E9E' : theme.gray,
+                      }
+                    ]}>
+                      {getCallStatusText(callStatus)}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              {/* Join Button - only for active calls or unknown status */}
+              {showJoinButton && (
+                <TouchableOpacity
+                  style={[
+                    styles.joinCallButtonModern, 
+                    { 
+                      backgroundColor: isCallActive ? '#4CAF50' : (callStatus === 'ended' || callStatus === 'cancelled') ? '#9E9E9E' : '#4CAF50',
+                      marginTop: 12,
+                    }
+                  ]}
+                  onPress={() => {
+                    if (callStatus === 'ended' || callStatus === 'cancelled') {
+                      Alert.alert(
+                        'Llamada no disponible', 
+                        `Esta llamada ha ${callStatus === 'ended' ? 'finalizado' : 'sido cancelada'}.`,
+                        [{ text: 'OK' }]
+                      );
+                      return;
+                    }
+
+                    console.log('🎥 JOIN CALL BUTTON PRESSED');
+                    
+                    if (callId) {
+                      console.log('✅ Found callId in metadata:', callId);
+                      joinCallFromInvitation(item.content, callId);
+                    } else {
+                      console.log('❌ No callId in metadata, using extraction');
+                      joinCallFromInvitation(item.content);
+                    }
+                  }}
+                  disabled={callStatus === 'ended' || callStatus === 'cancelled'}
+                >
+                  <Ionicons 
+                    name="videocam" 
+                    size={18} 
+                    color="#fff" 
+                  />
+                  <Text style={styles.joinCallButtonTextModern}>
+                    {callStatus === 'ended' || callStatus === 'cancelled' ? 'Llamada finalizada' : 'Unirse'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Timestamp */}
+              <Text style={[styles.callTimestamp, { color: theme.gray }]}>
+                {formatTime(item.createdAt)}
+              </Text>
+            </View>
+        </View>
+      );
+    }
+
+    // Regular message rendering
     return (
       <View style={[styles.messageContainer, isOwnMessage ? styles.ownMessage : styles.otherMessage]}>
         <View style={[
           styles.messageBubble,
           {
-            backgroundColor: isOwnMessage ? theme.primary : (isCallInvite ? theme.tint + '20' : theme.card),
-            borderColor: isCallInvite ? theme.tint : 'transparent',
-            borderWidth: isCallInvite ? 1 : 0,
+            backgroundColor: isOwnMessage ? theme.primary : theme.card,
           }
         ]}>
           {!isOwnMessage && chatType === 'project' && (
@@ -461,31 +651,6 @@ export default function ChatScreen() {
           ]}>
             {item.content}
           </Text>
-          
-          {/* 📞 Call invitation button */}
-          {isCallInvite && !isOwnMessage && (
-            <TouchableOpacity
-              style={[styles.joinCallButton, { backgroundColor: theme.tint }]}
-              onPress={() => {
-                console.log('🎥 JOIN CALL BUTTON PRESSED');
-                console.log('Message object:', JSON.stringify(item, null, 2));
-                
-                // Check if call ID is in message metadata
-                const callId = item.callId;
-                
-                if (callId) {
-                  console.log('✅ Found callId in metadata:', callId);
-                  router.push(`/call/${callId}` as any);
-                } else {
-                  console.log('❌ No callId in metadata, using extraction');
-                  joinCallFromInvitation(item.content);
-                }
-              }}
-            >
-              <Ionicons name="videocam" size={16} color="#fff" />
-              <Text style={styles.joinCallButtonText}>Join Call</Text>
-            </TouchableOpacity>
-          )}
           
           <Text style={[
             styles.messageTime,
@@ -518,25 +683,35 @@ export default function ChatScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[styles.loadingText, { color: theme.text }]}>Connecting to chat...</Text>
+          <Text style={[styles.loadingText, { color: theme.text }]}>Conectando al chat...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.gray + '30' }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
+        <View style={[styles.headerAvatar, { 
+          backgroundColor: chatType === 'project' ? theme.orange : theme.primary + '20'
+        }]}>
+          {chatType === 'project' ? (
+            <Text style={[styles.headerAvatarText, { color: '#fff' }]}>
+              {chatName.charAt(0).toUpperCase()}
+            </Text>
+          ) : (
+            <Text style={[styles.headerAvatarText, { color: theme.primary }]}>
+              {chatName.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
+            </Text>
+          )}
+        </View>
         <View style={styles.headerInfo}>
           <Text style={[styles.headerTitle, { color: theme.text }]} numberOfLines={1}>
             {chatName}
-          </Text>
-          <Text style={[styles.headerSubtitle, { color: theme.gray }]}>
-            {isConnected ? 'Online' : 'Connecting...'}
           </Text>
         </View>
         <View style={styles.headerActions}>
@@ -554,25 +729,7 @@ export default function ChatScreen() {
           >
             <Ionicons name="videocam" size={20} color={theme.text} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={() => {
-              Alert.prompt(
-                'Test: Join Call by ID',
-                'Enter call ID to test joining:',
-                (testCallId) => {
-                  if (testCallId && testCallId.trim()) {
-                    console.log('🧪 Testing join call with ID:', testCallId.trim());
-                    router.push(`/call/${testCallId.trim()}` as any);
-                  }
-                },
-                'plain-text',
-                '6878ebe4-c0fb-44be-8ef6-66f709953843'
-              );
-            }}
-          >
-            <Ionicons name="flask" size={20} color={theme.text} />
-          </TouchableOpacity>
+
         </View>
       </View>
 
@@ -590,6 +747,24 @@ export default function ChatScreen() {
           contentContainerStyle={styles.messagesContent}
           inverted
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyStateContainer}>
+              <View style={[styles.emptyStateCard, { backgroundColor: theme.card }]}>
+                <View style={[styles.emptyStateIcon, { backgroundColor: theme.primary + '20' }]}>
+                  <Ionicons name="chatbubbles" size={48} color={theme.primary} />
+                </View>
+                <Text style={[styles.emptyStateTitle, { color: theme.text }]}>
+                  ¡Sé el primero en escribir!
+                </Text>
+                <Text style={[styles.emptyStateMessage, { color: theme.gray }]}>
+                  {chatType === 'direct' 
+                    ? 'Empieza la conversación y rompe el hielo con un mensaje amigable.'
+                    : 'Comparte ideas, actualiza al equipo o simplemente saluda para comenzar la colaboración.'
+                  }
+                </Text>
+              </View>
+            </View>
+          }
         />
 
         {/* Typing Indicator */}
@@ -658,16 +833,24 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 8,
   },
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  headerAvatarText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   headerInfo: {
     flex: 1,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
   },
   headerActions: {
     flexDirection: 'row',
@@ -749,7 +932,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  joinCallButton: {
+  joinCallButtonModern: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -759,9 +942,81 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 6,
   },
-  joinCallButtonText: {
+  joinCallButtonTextModern: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  
+     callInvitationCard: {
+     padding: 16,
+     borderWidth: 2,
+     borderRadius: 16,
+     width: '95%',
+     maxWidth: '95%',
+   },
+  callInvitationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+     callIconContainer: {
+     width: 40,
+     height: 40,
+     borderRadius: 20,
+     justifyContent: 'center',
+     alignItems: 'center',
+   },
+  callInvitationInfo: {
+    flex: 1,
+  },
+  callInvitationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  callInvitationSubtitle: {
+    fontSize: 12,
+  },
+  
+  callTimestamp: {
+    fontSize: 11,
+    marginTop: 8,
+    alignSelf: 'flex-end',
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+    paddingVertical: 40,
+  },
+  emptyStateCard: {
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    maxWidth: 300,
+    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  emptyStateMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 }); 

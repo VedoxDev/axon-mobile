@@ -9,6 +9,8 @@ import { UserService, UserSearchResult } from '@/services/userService';
 import { useAuth } from '@/app/auth/AuthProvider';
 import { useProjectContext } from '@/contexts/ProjectContext';
 import SelectedMembersModal from './SelectedMembersModal';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { CustomAlert } from '@/components/CustomAlert';
 
 interface SelectedMember {
   id: string;
@@ -26,6 +28,7 @@ export default function AddMembersScreen() {
   const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
   const { user } = useAuth();
   const { refreshProjects } = useProjectContext();
+  const { showAlert, alertConfig, hideAlert } = useCustomAlert();
   
   const [selectedMembers, setSelectedMembers] = useState<SelectedMember[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,7 +74,12 @@ export default function AddMembersScreen() {
 
     // Don't allow inviting yourself
     if (user && selectedUser.id === user.id) {
-      Alert.alert('Información', 'No puedes invitarte a ti mismo al proyecto');
+      showAlert({
+        title: 'Información',
+        message: 'No puedes invitarte a ti mismo al proyecto',
+        type: 'info',
+        buttons: [{ text: 'Entendido', style: 'default' }]
+      });
       return;
     }
 
@@ -134,37 +142,46 @@ export default function AddMembersScreen() {
         }
       }
       
-      Alert.alert(
-        'Éxito', 
-        successMessage,
-        [
+      showAlert({
+        title: 'Éxito',
+        message: successMessage,
+        type: 'success',
+        buttons: [
           {
-            text: 'OK',
+            text: 'Perfecto',
+            style: 'default',
             onPress: () => router.replace('/(tabs)/home')
           }
         ]
-      );
+      });
       
-    } catch (error: any) {
-      console.error('Error creating project:', error);
-      Alert.alert('Error', error.message || 'No se pudo crear el proyecto. Inténtalo de nuevo.');
-    } finally {
+          } catch (error: any) {
+        console.error('Error creating project:', error);
+        showAlert({
+          title: 'Error',
+          message: error.message || 'No se pudo crear el proyecto. Inténtalo de nuevo.',
+          type: 'error',
+          buttons: [{ text: 'Reintentar', style: 'default' }]
+        });
+      } finally {
       setIsCreatingProject(false);
     }
   };
 
   const handleSkip = () => {
-    Alert.alert(
-      'Omitir invitaciones',
-      'Se creará el proyecto sin invitar a ningún miembro. Podrás agregar miembros más adelante.',
-      [
+    showAlert({
+      title: 'Omitir invitaciones',
+      message: 'Se creará el proyecto sin invitar a ningún miembro. Podrás agregar miembros más adelante.',
+      type: 'warning',
+      buttons: [
         { text: 'Cancelar', style: 'cancel' },
         { 
           text: 'Crear Proyecto', 
+          style: 'default',
           onPress: handleFinish
         }
       ]
-    );
+    });
   };
 
   const handleOpenSearchModal = () => {
@@ -425,6 +442,16 @@ export default function AddMembersScreen() {
         onClose={handleCloseSelectedMembersModal}
         onRemoveMember={handleRemoveMember}
         theme={theme}
+      />
+      
+      {/* Custom Alert */}
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onDismiss={hideAlert}
       />
     </View>
   );

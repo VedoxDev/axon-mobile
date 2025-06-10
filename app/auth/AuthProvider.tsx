@@ -10,6 +10,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, nombre: string, apellidos: string, password: string) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean; // To indicate if the auth state is being loaded (e.g., from storage)
   isAuthTransitioning: boolean; // To indicate if we're transitioning after successful auth
@@ -135,15 +136,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (error.response.status === 400) {
           // Invalid input format or missing fields
-          throw new Error('Invalid input. Please check your email and password.');
+          throw new Error('Entrada inválida. Por favor verifica tu email y contraseña.');
         } else if (error.response.status === 401 && authError.message === 'invalid-credentials') {
           // Invalid credentials
-          throw new Error('Invalid email or password. Please try again.');
+          throw new Error('Email o contraseña incorrectos. Por favor inténtalo de nuevo.');
         }
       }
       
       // Generic error for network issues or other problems
-      throw new Error('Login failed. Please check your connection and try again.');
+      throw new Error('Error de inicio de sesión. Por favor verifica tu conexión e inténtalo de nuevo.');
     }
   };
 
@@ -171,16 +172,89 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (error.response.status === 400) {
           if (authError.message === 'email-already-exists') {
-            throw new Error('An account with this email already exists. Please try logging in instead.');
+            throw new Error('Ya existe una cuenta con este email. Por favor intenta iniciar sesión.');
           } else {
             // Invalid input format or missing fields
-            throw new Error('Invalid input. Please check all fields and try again.');
+            throw new Error('Entrada inválida. Por favor verifica todos los campos e inténtalo de nuevo.');
           }
         }
       }
       
       // Generic error for network issues or other problems
-      throw new Error('Registration failed. Please check your connection and try again.');
+      throw new Error('Error de registro. Por favor verifica tu conexión e inténtalo de nuevo.');
+    }
+  };
+
+  // Change password function
+  const changePassword = async (currentPassword: string, newPassword: string, confirmPassword: string) => {
+    try {
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.put(`${API_BASE_URL}/auth/change-password`, {
+        currentPassword,
+        newPassword,
+        confirmPassword
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Password changed successfully', response.data);
+      
+    } catch (error: any) {
+      console.error('Change password failed', error);
+      
+      // Handle specific error cases
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message;
+        
+        if (status === 401) {
+          if (message === 'current-password-incorrect') {
+            throw new Error('La contraseña actual es incorrecta');
+          } else if (message === 'user-not-found') {
+            throw new Error('Usuario no encontrado');
+          } else {
+            throw new Error('No autorizado. Por favor inicia sesión de nuevo.');
+          }
+        } else if (status === 400) {
+          if (Array.isArray(message)) {
+            // Handle validation errors
+            const errorMessages = message.map((msg: string) => {
+              switch (msg) {
+                case 'current-password-required':
+                  return 'La contraseña actual es requerida';
+                case 'new-password-required':
+                  return 'La nueva contraseña es requerida';
+                case 'confirm-password-required':
+                  return 'La confirmación de contraseña es requerida';
+                case 'new-password-too-short':
+                  return 'La nueva contraseña es muy corta';
+                case 'new-password-too-weak (needs uppercase, number, symbol)':
+                  return 'La nueva contraseña necesita mayúscula, número y símbolo';
+                case 'new-password-invalid-characters':
+                  return 'La nueva contraseña contiene caracteres inválidos';
+                default:
+                  return msg;
+              }
+            });
+            throw new Error(errorMessages.join(', '));
+          } else if (message === 'passwords-do-not-match') {
+            throw new Error('Las contraseñas no coinciden');
+          } else if (message === 'new-password-must-be-different') {
+            throw new Error('La nueva contraseña debe ser diferente a la actual');
+          } else {
+            throw new Error('Datos inválidos. Por favor verifica todos los campos.');
+          }
+        }
+      }
+      
+      // Generic error for network issues or other problems
+      throw new Error('Error al cambiar la contraseña. Por favor verifica tu conexión e inténtalo de nuevo.');
     }
   };
 
@@ -213,6 +287,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     token,
     login,
     register,
+    changePassword,
     logout,
     isLoading,
     isAuthTransitioning,
@@ -241,7 +316,7 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}; 
 
 // Add default export to fix route warning
 export default AuthProvider; 

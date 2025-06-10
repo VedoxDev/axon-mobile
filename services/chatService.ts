@@ -279,7 +279,7 @@ console.log('📡 Sending via WebSocket');
         },
       });
 
-      console.log('📥 Raw message history response:', JSON.stringify(response.data, null, 2));
+      // console.log('📥 Raw message history response:', JSON.stringify(response.data, null, 2));
       
       // Normalize all messages
       return response.data.map(normalizeMessage);
@@ -304,7 +304,7 @@ console.log('📡 Sending via WebSocket');
         },
       });
 
-      console.log('📥 Raw project message history response:', JSON.stringify(response.data, null, 2));
+      // console.log('📥 Raw project message history response:', JSON.stringify(response.data, null, 2));
       
       // Normalize all messages
       return response.data.map(normalizeMessage);
@@ -354,7 +354,7 @@ console.log('📡 Sending via WebSocket');
         },
       });
 
-      console.log(`✅ Marked ${response.data.markedCount} messages as read for user:`, userId);
+      // console.log(`✅ Marked ${response.data.markedCount} messages as read for user:`, userId);
       return response.data;
     } catch (error: any) {
       console.error('Failed to mark messages as read', error);

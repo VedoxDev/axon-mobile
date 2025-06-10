@@ -12,8 +12,8 @@ import { AuthProvider, useAuth } from './auth/AuthProvider'; // Import AuthProvi
 import { ProjectProvider } from '@/contexts/ProjectContext'; // Import ProjectProvider
 import { UserProvider } from '@/contexts/UserContext'; // Import UserProvider
 
-// LiveKit initialization - commented out for now to fix WebRTC issues
-// import { registerGlobals, AudioSession } from '@livekit/react-native';
+// LiveKit initialization
+import { registerGlobals, AudioSession } from '@livekit/react-native';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -27,25 +27,11 @@ export default function RootLayout() {
     'Inter-Regular': require('../assets/fonts/Inter-Regular.ttf'),
   });
 
-  // Initialize LiveKit - commented out for now to fix WebRTC issues
-  // useEffect(() => {
-  //   registerGlobals();
-    
-  //   const initAudio = async () => {
-  //     try {
-  //       await AudioSession.startAudioSession();
-  //       console.log('✅ LiveKit audio session started');
-  //     } catch (error) {
-  //       console.error('❌ Failed to start LiveKit audio session:', error);
-  //     }
-  //   };
-
-  //   initAudio();
-
-  //   return () => {
-  //     AudioSession.stopAudioSession();
-  //   };
-  // }, []);
+  // Initialize LiveKit globals only (not audio session)
+  useEffect(() => {
+    registerGlobals();
+    console.log('✅ LiveKit globals registered');
+  }, []);
 
   if (!loaded) {
     return null;
@@ -83,26 +69,28 @@ function LayoutContent({ theme }: { theme: any }) {
     );
   }
 
-  if (user) {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} initialRouteName="(tabs)">
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="call/[callId]" options={{ headerShown: false }} />
-        </Stack>
-      </View>
-    );
-  } else {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.background }}>
-        <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} initialRouteName="login">
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </View>
-    );
-  }
+  // Single Stack configuration with all routes defined
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <StatusBar style="auto" />
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* Index route - entry point */}
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        
+        {/* Authentication routes */}
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="register" options={{ headerShown: false }} />
+        <Stack.Screen name="changePassword" options={{ headerShown: false }} />
+        
+        {/* Main app routes */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="call/[callId]" options={{ headerShown: false }} />
+        <Stack.Screen name="chat/[chatId]" options={{ headerShown: false }} />
+        <Stack.Screen name="project/[projectId]" options={{ headerShown: false }} />
+        
+        {/* Not found route */}
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </View>
+  );
 }

@@ -273,11 +273,11 @@ export default function MessagesScreen() {
     if (diffHours < 1) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else if (diffDays < 1) {
-      return 'Yesterday';
+      return 'Ayer';
     } else if (diffDays < 7) {
-      return date.toLocaleDateString([], { weekday: 'short' });
+      return date.toLocaleDateString('es-ES', { weekday: 'short' });
     } else {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
     }
   };
 
@@ -298,8 +298,10 @@ export default function MessagesScreen() {
           style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}
           onPress={() => openChat(item.partner!.id, 'direct', partnerName)}
         >
-          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.chatAvatar }]}>
-            <Text style={[styles.chatInitial, { color: theme.card }]}>{partnerName[0]}</Text>
+          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.primary + '20' }]}>
+            <Text style={[styles.chatInitial, { color: theme.primary }]}>
+              {partnerName.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase()}
+            </Text>
           </View>
           <View style={styles.chatDetails}>
             <Text style={[styles.chatName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
@@ -328,8 +330,10 @@ export default function MessagesScreen() {
           style={[styles.chatItem, { borderBottomColor: colorScheme === 'dark' ? theme.background : theme.card }]}
           onPress={() => openChat(item.project!.id, 'project', projectName)}
         >
-          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.groupAvatar }]}>
-            <Ionicons name="people" size={24} color={theme.card} />
+          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: theme.orange }]}>
+            <Text style={[styles.chatInitial, { color: '#fff' }]}>
+              {projectName.charAt(0).toUpperCase()}
+            </Text>
           </View>
           <View style={styles.chatDetails}>
             <Text style={[styles.chatName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">

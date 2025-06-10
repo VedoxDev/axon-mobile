@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Animated, ActivityIndicator, Alert, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ActivityIndicator, Alert, FlatList, Platform } from 'react-native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,8 @@ import React from 'react';
 import { SectionService, Section, generateSectionColor } from '@/services/sectionService';
 import { TaskService, Task as ApiTask } from '@/services/taskService';
 import { useProjectContext } from '@/contexts/ProjectContext';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
+import { CustomAlert } from '@/components/CustomAlert';
 
 // Priority and Status mappings
 const PRIORITY_CONFIG = {
@@ -44,6 +46,7 @@ export default function TaskScreen() {
   const router = useRouter();
   const { projectId, projectName } = useLocalSearchParams<{ projectId: string; projectName: string }>();
   const { projects } = useProjectContext();
+  const { showAlert, alertConfig, hideAlert } = useCustomAlert();
   
   const [columns, setColumns] = useState<Column[]>([]);
   const [isModalActive, setIsModalActive] = useState(false);
@@ -145,8 +148,6 @@ export default function TaskScreen() {
       setIsLoading(false);
     }
   };
-
-
 
   // Delete section
   const handleDeleteSection = (sectionId: number | null, sectionName: string) => {
@@ -272,8 +273,6 @@ export default function TaskScreen() {
     }
   }, [isFocused]);
 
-
-
   const handleTaskStatusChange = async (taskId: string, newStatus: 'todo' | 'in_progress' | 'done') => {
     try {
       await TaskService.updateTask(taskId, { status: newStatus });
@@ -299,6 +298,27 @@ export default function TaskScreen() {
       pathname: '/project/Task/modal',
       params: { taskId: task.id }
     });
+  };
+
+  const handleSectionLongPress = (column: Column, drag: () => void) => {
+    // Don't allow dragging backlog section
+    if (column.isBacklog) {
+      return;
+    }
+
+    // Check if user has permission to manage sections
+    if (!canManageProject) {
+      showAlert({
+        title: 'Sin Permisos',
+        message: 'No tienes permisos para reordenar las secciones de este proyecto.',
+        type: 'error',
+        buttons: [{ text: 'Entendido', style: 'default' }]
+      });
+      return;
+    }
+
+    // User has permissions, start drag
+    drag();
   };
 
   const renderTaskCard = ({ item }: { item: ApiTask }) => {
@@ -407,7 +427,7 @@ export default function TaskScreen() {
 
   const renderColumn = ({ item: column, drag, isActive }: RenderItemParams<Column>) => (
     <TouchableOpacity
-      onLongPress={column.isBacklog ? undefined : drag}
+      onLongPress={() => handleSectionLongPress(column, drag)}
       disabled={isActive || column.isBacklog}
       style={[
         styles.column,
@@ -458,6 +478,8 @@ export default function TaskScreen() {
             keyExtractor={(item) => item.id.toString()}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 8 }}
+            nestedScrollEnabled={true}
+            scrollEnabled={true}
           />
         ) : (
           <View style={{ padding: 20, alignItems: 'center' }}>
@@ -637,12 +659,21 @@ export default function TaskScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.boardScrollContainer}
+          activationDistance={10}
+          dragHitSlop={{ top: -20, bottom: -20, left: -20, right: -20 }}
         />
       )}
       
       {/* Floating Action Button */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.primary }]}
+        style={[
+          styles.fab, 
+          { 
+            backgroundColor: theme.primary,
+            // Add proper bottom spacing for Android navigation
+            bottom: Platform.OS === 'android' ? 45 : 20,
+          }
+        ]}
         onPress={() => {
           router.push({
             pathname: '/project/Task/createTaskModal',
@@ -652,6 +683,15 @@ export default function TaskScreen() {
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
+      
+      <CustomAlert
+        visible={alertConfig.visible}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type}
+        buttons={alertConfig.buttons}
+        onDismiss={hideAlert}
+      />
     </SafeAreaView>
   );
 }

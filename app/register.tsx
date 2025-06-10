@@ -2,16 +2,19 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Feather } from '@expo/vector-icons';
 import { Stack, router } from "expo-router";
 import { useState, useEffect } from "react";
-import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { useAuth } from './auth/AuthProvider';
 import PasswordStrengthBox from './PasswordStrengthBox';
+import { CustomAlert } from '@/components/CustomAlert';
+import { useCustomAlert } from '@/hooks/useCustomAlert';
 
 export default function RegisterScreen() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === "dark" ? Colors.dark : Colors.light;
   const { register, isLoading } = useAuth();
+  const { alertConfig, showError, hideAlert } = useCustomAlert();
 
   // Form state
   const [nombre, setNombre] = useState('');
@@ -92,47 +95,47 @@ export default function RegisterScreen() {
   const handleRegister = async () => {
     // Basic validation
     if (!nombre.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu nombre');
+      showError('Por favor ingresa tu nombre', 'Error');
       return;
     }
     if (!apellidos.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tus apellidos');
+      showError('Por favor ingresa tus apellidos', 'Error');
       return;
     }
     if (!email.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu email');
+      showError('Por favor ingresa tu email', 'Error');
       return;
     }
     if (!password.trim()) {
-      Alert.alert('Error', 'Por favor ingresa tu contraseña');
+      showError('Por favor ingresa tu contraseña', 'Error');
       return;
     }
     if (!confirmPassword.trim()) {
-      Alert.alert('Error', 'Por favor confirma tu contraseña');
+      showError('Por favor confirma tu contraseña', 'Error');
       return;
     }
 
     // Email validation
     if (!isValidEmail(email.trim())) {
-      Alert.alert('Error', 'Por favor ingresa un email válido');
+      showError('Por favor ingresa un email válido', 'Error');
       return;
     }
 
     // Password strength validation
     if (!passwordCriteria.length || !passwordCriteria.uppercase || !passwordCriteria.number || !passwordCriteria.symbol) {
-      Alert.alert('Error', 'La contraseña debe cumplir con todos los requisitos de seguridad');
+      showError('La contraseña debe cumplir con todos los requisitos de seguridad', 'Error');
       return;
     }
 
     // Password confirmation validation
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Las contraseñas no coinciden');
+      showError('Las contraseñas no coinciden', 'Error');
       return;
     }
 
     // Terms validation
     if (!termsAccepted) {
-      Alert.alert('Error', 'Debes aceptar los términos y condiciones');
+      showError('Debes aceptar los términos y condiciones', 'Error');
       return;
     }
 
@@ -141,7 +144,7 @@ export default function RegisterScreen() {
       // On successful registration, show welcome toast
       // The navigation will be handled automatically by the AuthProvider and _layout.tsx
     } catch (error: any) {
-      Alert.alert('Error de registro', error.message);
+      showError(error.message, 'Error de registro');
     }
   };
 
@@ -304,6 +307,16 @@ export default function RegisterScreen() {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Custom Alert */}
+            <CustomAlert
+              visible={alertConfig.visible}
+              title={alertConfig.title}
+              message={alertConfig.message}
+              type={alertConfig.type}
+              buttons={alertConfig.buttons}
+              onDismiss={hideAlert}
+            />
 
           </View>
         </KeyboardAvoidingView>

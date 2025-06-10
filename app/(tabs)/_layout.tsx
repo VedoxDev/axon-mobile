@@ -1,6 +1,6 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, ToastAndroid } from 'react-native';
+import { Text, ToastAndroid, View, ActivityIndicator } from 'react-native';
 import { PlatformPressable } from '@react-navigation/elements'; // 👈 Aquí el fix elegante
 import { useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,8 +11,9 @@ import { useAuth } from '../auth/AuthProvider';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const { user, justLoggedIn, setJustLoggedIn } = useAuth();
+  const { user, justLoggedIn, setJustLoggedIn, isLoading } = useAuth();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   useEffect(() => {
     if (user && justLoggedIn) {
@@ -24,6 +25,33 @@ export default function TabLayout() {
       setJustLoggedIn(false);
     }
   }, [user, justLoggedIn, setJustLoggedIn]);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isLoading, router]);
+
+  // Show loading screen while checking auth
+  if (isLoading) {
+    const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+    return (
+      <View style={{ 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: theme.background 
+      }}>
+        <ActivityIndicator size="large" color={theme.tint} />
+      </View>
+    );
+  }
+
+  // Don't render tabs if user is not authenticated
+  if (!user) {
+    return null;
+  }
 
   const activeTintColor =
     colorScheme === 'dark' ? Colors.dark.tint : Colors.light.tint;
@@ -59,45 +87,45 @@ export default function TabLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: '',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="home" size={24} color={color} />
+            <Ionicons name="home" size={28} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendar',
+          title: '',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="calendar" size={24} color={color} />
+            <Ionicons name="calendar" size={28} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="tasks"
         options={{
-          title: 'Tasks',
+          title: '',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="checkmark-done" size={24} color={color} />
+            <Ionicons name="checkmark-done" size={28} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
-          title: 'Activity',
+          title: '',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="notifications" size={24} color={color} />
+            <Ionicons name="notifications" size={28} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="user"
         options={{
-          title: 'User',
+          title: '',
           tabBarIcon: ({ color }) => (
-            <Ionicons name="person" size={24} color={color} />
+            <Ionicons name="person" size={28} color={color} />
           ),
         }}
       />

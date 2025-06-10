@@ -8,7 +8,7 @@ export interface ProjectResponse {
   name: string; // The name of the project
   description: string; // The description of the project
   status: string; // The current status of the project (e.g., "active", "completed")
-  role: "owner" | "member"; // The role of the authenticated user in this project
+  role: "owner" | "admin" | "member"; // The role of the authenticated user in this project
 }
 
 // Create project request interface
@@ -47,8 +47,21 @@ export interface ProjectMember {
   id: string; // User UUID
   nombre: string; // First name
   apellidos: string; // Last name
-  role: "owner" | "member"; // User's role in the project
+  role: "owner" | "admin" | "member"; // User's role in the project
   status: "online" | "offline"; // User's current status
+}
+
+// Change member role request interface
+export interface ChangeMemberRoleRequest {
+  role: "member" | "admin"; // New role for the member
+}
+
+// Change member role response interface
+export interface ChangeMemberRoleResponse {
+  message: string; // Success message
+  memberId: string; // ID of the member whose role was changed
+  newRole: "member" | "admin"; // The new role
+  memberName: string; // Name of the member
 }
 
 // Project service class to handle all project-related API calls
@@ -194,6 +207,65 @@ export class ProjectService {
       
       // Generic error for network issues or other problems
       throw new Error('Failed to fetch project members. Please check your connection and try again.');
+    }
+  }
+
+  // Change a project member's role (owner only)
+  static async changeMemberRole(projectId: string, memberId: string, newRole: "member" | "admin"): Promise<ChangeMemberRoleResponse> {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.put(`${API_BASE_URL}/projects/${projectId}/members/${memberId}/role`, 
+        { role: newRole }, 
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to change member role', error);
+      
+      // Handle specific error cases based on API documentation
+      if (error.response?.status === 400) {
+        const message = error.response?.data?.message;
+        if (message === 'cannot-change-owner-role') {
+          throw new Error('No se puede cambiar el rol del propietario del proyecto.');
+        } else if (message === 'cannot-change-own-role') {
+          throw new Error('No puedes cambiar tu propio rol.');
+        } else if (message?.includes('role-must-be-member-or-admin')) {
+          throw new Error('El rol debe ser "miembro" o "administrador".');
+        }
+        throw new Error('Datos de rol inválidos. Por favor verifica la información.');
+      } else if (error.response?.status === 401) {
+        throw new Error('Autenticación fallida. Por favor inicia sesión de nuevo.');
+      } else if (error.response?.status === 403) {
+        const message = error.response?.data?.message;
+        if (message === 'only-owner-can-change-roles') {
+          throw new Error('Solo el propietario del proyecto puede cambiar roles.');
+        }
+        throw new Error('No tienes permisos para cambiar roles en este proyecto.');
+      } else if (error.response?.status === 404) {
+        const message = error.response?.data?.message;
+        if (message === 'project-not-found') {
+          throw new Error('Proyecto no encontrado.');
+        } else if (message === 'member-not-found') {
+          throw new Error('Miembro no encontrado en el proyecto.');
+        }
+        throw new Error('Proyecto o miembro no encontrado.');
+      } else if (error.response?.status === 500) {
+        throw new Error('Error del servidor. Por favor inténtalo de nuevo más tarde.');
+      }
+      
+      // Generic error for network issues or other problems
+      throw new Error('Error al cambiar el rol del miembro. Por favor verifica tu conexión e inténtalo de nuevo.');
     }
   }
 }
