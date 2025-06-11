@@ -20,7 +20,7 @@
     "production": {
       "autoIncrement": true,
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "apk"  // ← Este es el cambio clave
       }
     }
   },
@@ -28,4 +28,3 @@
     "production": {}
   }
 }
-

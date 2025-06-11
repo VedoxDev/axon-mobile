@@ -536,7 +536,7 @@ export default function ChatScreen() {
     };
 
     const isCallActive = callStatus === 'active';
-    const showJoinButton = isCallInvite && !isOwnMessage && (isCallActive || !callStatus);
+    const showJoinButton = isCallInvite && ((isCallActive || !callStatus) && (!isOwnMessage || (isOwnMessage && isCallActive)));
 
     // Modern call invitation design
     if (isCallInvite) {
@@ -619,7 +619,10 @@ export default function ChatScreen() {
                     color="#fff" 
                   />
                   <Text style={styles.joinCallButtonTextModern}>
-                    {callStatus === 'ended' || callStatus === 'cancelled' ? 'Llamada finalizada' : 'Unirse'}
+                    {callStatus === 'ended' || callStatus === 'cancelled' 
+                      ? 'Llamada finalizada' 
+                      : (isOwnMessage ? 'Volver a la llamada' : 'Unirse')
+                    }
                   </Text>
                 </TouchableOpacity>
               )}

@@ -2,7 +2,7 @@ import { useColorScheme } from "@/hooks/useColorScheme";
 import { Feather } from '@expo/vector-icons';
 import { Stack, router } from "expo-router";
 import { useState, useEffect } from "react";
-import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View, Linking } from "react-native";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../constants/Colors';
 import { useAuth } from './auth/AuthProvider';
@@ -90,6 +90,21 @@ export default function RegisterScreen() {
     };
     setPasswordCriteria(criteria);
     setPassword(text);
+  };
+
+  // Function to open the website
+  const openWebsite = async () => {
+    try {
+      const url = 'https://axon-landing.vercel.app/';
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        console.log('Cannot open URL:', url);
+      }
+    } catch (error) {
+      console.error('Error opening URL:', error);
+    }
   };
 
   const handleRegister = async () => {
@@ -277,7 +292,24 @@ export default function RegisterScreen() {
               >
                 {termsAccepted && <Feather name="check" size={16} color="white" />}
               </TouchableOpacity>
-              <Text style={[styles.checkboxLabel, { color: theme.text, fontFamily: 'Inter-Regular' }]}>Acepto los Términos y Condiciones y la Política de Privacidad</Text>
+              <View style={styles.checkboxTextContainer}>
+                <Text style={[styles.checkboxLabel, { color: theme.text, fontFamily: 'Inter-Regular' }]}>
+                  Acepto los{' '}
+                  <Text 
+                    style={[styles.linkText, { color: theme.orange }]}
+                    onPress={openWebsite}
+                  >
+                    Términos y Condiciones
+                  </Text>
+                  {' '}y la{' '}
+                  <Text 
+                    style={[styles.linkText, { color: theme.orange }]}
+                    onPress={openWebsite}
+                  >
+                    Política de Privacidad
+                  </Text>
+                </Text>
+              </View>
             </View>
 
             {/* Register Button */}
@@ -301,7 +333,7 @@ export default function RegisterScreen() {
               <Text style={[{ color: theme.text, fontFamily: 'Inter-Regular', fontSize: 14 }]}>
                 ¿Ya tienes una cuenta?
               </Text>
-              <TouchableOpacity onPress={() => router.replace('/login')} style={{ marginLeft: 4 }} disabled={isLoading}>
+              <TouchableOpacity onPress={() => router.push('/login')} style={{ marginLeft: 4 }} disabled={isLoading}>
                 <Text style={{ color: theme.orange, fontFamily: 'Inter-Bold', fontSize: 14 }}>
                   Inicia sesión
                 </Text>
@@ -388,7 +420,7 @@ const styles = StyleSheet.create({
   },
   checkboxContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '100%',
     marginBottom: 15,
   },
@@ -400,10 +432,20 @@ const styles = StyleSheet.create({
     marginRight: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2, // Align with first line of text
   },
   checkboxLabel: {
     fontSize: 14,
-    flex: 1, // Allow text to wrap if needed
+    lineHeight: 20,
+    flexWrap: 'wrap',
+  },
+  checkboxTextContainer: {
+    flex: 1,
+    flexShrink: 1,
+  },
+  linkText: {
+    textDecorationLine: 'underline',
+    fontFamily: 'Inter-Bold',
   },
   registerButton: {
     width: "100%",

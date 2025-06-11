@@ -417,47 +417,57 @@ export default function VideoCallScreen() {
       {/* Video Area */}
       <View style={styles.participantsContainer}>
         {isConnected ? (
-          <View style={styles.videoGrid}>
-            {/* Local video */}
-            <View style={styles.videoContainer}>
-              {localVideoTrack && room?.localParticipant && !videoMuted ? (
-                  <>
-                    <VideoTrack style={styles.video} trackRef={{ participant: room.localParticipant, publication: localVideoTrack, source: Track.Source.Camera }} />
-                    <Text style={styles.videoLabel}>{room ? getDisplayName(room.localParticipant, getCurrentUserId()) : 'You'}</Text>
-                  </>
-              ) : (
-                <View style={[styles.video, { backgroundColor: '#333' }]}>
-                  <Ionicons name="person" size={40} color="#FFF" />
-                  <Text style={styles.videoLabel}>{room ? getDisplayName(room.localParticipant, getCurrentUserId()) + ' (Sin video)' : 'Tú (Sin video)'}</Text>
-                </View>
-              )}
-            </View>
+          (() => {
+            const totalParticipants = 1 + participants.length; // 1 for local + remote participants
+            const isSmallGroup = totalParticipants <= 2;
+            const videoContainerStyle = isSmallGroup ? styles.videoContainerLarge : styles.videoContainer;
+            const videoGridStyle = isSmallGroup ? styles.videoGridSmall : styles.videoGrid;
+            const personIconSize = isSmallGroup ? 60 : 40;
             
-            {/* Remote videos */}
-            {remoteVideoTracks.filter(remoteVideo => isVideoTrackEnabled(remoteVideo.publication)).map((remoteVideo, index) => (
-              <View key={`${remoteVideo.participant.identity}-${index}`} style={styles.videoContainer}>
-                <VideoTrack 
-                  style={styles.video} 
-                  trackRef={{ participant: remoteVideo.participant, publication: remoteVideo.publication, source: Track.Source.Camera }} 
-                />
-                <Text style={styles.videoLabel}>{getDisplayName(remoteVideo.participant, getCurrentUserId())}</Text>
-              </View>
-            ))}
-            
-            {/* Participants without video */}
-            {participants.filter(p => 
-              !remoteVideoTracks.some(rv => 
-                rv.participant.identity === p.identity && isVideoTrackEnabled(rv.publication)
-              )
-            ).map((participant) => (
-              <View key={participant.identity} style={styles.videoContainer}>
-                <View style={[styles.video, { backgroundColor: '#555' }]}>
-                  <Ionicons name="person" size={40} color="#FFF" />
-                  <Text style={styles.videoLabel}>{getDisplayName(participant, getCurrentUserId())} (Sin video)</Text>
+            return (
+              <View style={videoGridStyle}>
+                {/* Local video */}
+                <View style={videoContainerStyle}>
+                  {localVideoTrack && room?.localParticipant && !videoMuted ? (
+                      <>
+                        <VideoTrack style={styles.video} trackRef={{ participant: room.localParticipant, publication: localVideoTrack, source: Track.Source.Camera }} />
+                        <Text style={styles.videoLabel}>{room ? getDisplayName(room.localParticipant, getCurrentUserId()) : 'You'}</Text>
+                      </>
+                  ) : (
+                    <View style={[styles.video, { backgroundColor: '#333' }]}>
+                      <Ionicons name="person" size={personIconSize} color="#FFF" />
+                      <Text style={styles.videoLabel}>{room ? getDisplayName(room.localParticipant, getCurrentUserId()) + ' (Sin video)' : 'Tú (Sin video)'}</Text>
+                    </View>
+                  )}
                 </View>
+                
+                {/* Remote videos */}
+                {remoteVideoTracks.filter(remoteVideo => isVideoTrackEnabled(remoteVideo.publication)).map((remoteVideo, index) => (
+                  <View key={`${remoteVideo.participant.identity}-${index}`} style={videoContainerStyle}>
+                    <VideoTrack 
+                      style={styles.video} 
+                      trackRef={{ participant: remoteVideo.participant, publication: remoteVideo.publication, source: Track.Source.Camera }} 
+                    />
+                    <Text style={styles.videoLabel}>{getDisplayName(remoteVideo.participant, getCurrentUserId())}</Text>
+                  </View>
+                ))}
+                
+                {/* Participants without video */}
+                {participants.filter(p => 
+                  !remoteVideoTracks.some(rv => 
+                    rv.participant.identity === p.identity && isVideoTrackEnabled(rv.publication)
+                  )
+                ).map((participant) => (
+                  <View key={participant.identity} style={videoContainerStyle}>
+                    <View style={[styles.video, { backgroundColor: '#555' }]}>
+                      <Ionicons name="person" size={personIconSize} color="#FFF" />
+                      <Text style={styles.videoLabel}>{getDisplayName(participant, getCurrentUserId())} (Sin video)</Text>
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            );
+          })()
         ) : (
           <View style={styles.noVideoContainer}>
             <Ionicons name="videocam-off" size={80} color="#FFF" />
@@ -632,6 +642,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  videoGridSmall: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 15,
+  },
   videoContainer: {
     width: '45%',
     aspectRatio: 4/3,
@@ -639,6 +656,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     position: 'relative',
+  },
+  videoContainerLarge: {
+    width: '85%',
+    aspectRatio: 16/9,
+    margin: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+    maxHeight: height * 0.4,
   },
   video: {
     width: '100%',

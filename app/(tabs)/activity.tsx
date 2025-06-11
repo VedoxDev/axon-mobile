@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { Colors } from '@/constants/Colors';
 import { InvitationService, PendingInvitation } from '@/services/invitationService';
@@ -66,9 +67,12 @@ export default function ActivityScreen() {
     setRefreshing(false);
   }, [fetchAllData]);
 
-  useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+  // Refetch data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchAllData();
+    }, [fetchAllData])
+  );
 
   const handleInvitationResponse = async (invitationId: string, action: 'accept' | 'reject') => {
     setRespondingTo(invitationId);

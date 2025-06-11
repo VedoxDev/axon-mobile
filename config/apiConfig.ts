@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'http://192.168.0.229:3000'; // TODO: Replace with your actual backend base URL 
+export const API_BASE_URL = 'https://axon-backend-production.up.railway.app'; // TODO: Replace with your actual backend base URL 
