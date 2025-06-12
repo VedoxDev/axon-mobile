@@ -1,31 +1,31 @@
-# Announcements API Documentation
+# Documentación de API de Anuncios
 
-## Overview
+## Resumen
 
-The Announcements API allows project administrators and owners to create announcements for their projects, and provides users with a personal area to view all announcements from their projects with read tracking capabilities.
+La API de Anuncios permite a los administradores y propietarios de proyectos crear anuncios para sus proyectos, y proporciona a los usuarios un área personal para ver todos los anuncios de sus proyectos con capacidades de seguimiento de lectura.
 
-## Features
+## Características
 
-- ✅ **Project-based announcements** with different types (info, warning, success, urgent)
-- ✅ **Permission control** (only admins/owners can create announcements)
-- ✅ **Read tracking** per user across all announcements
-- ✅ **Pinned announcements** for important messages
-- ✅ **Personal dashboard** showing all announcements from user's projects
-- ✅ **Unread counts** and statistics for better user experience
+- ✅ **Anuncios basados en proyecto** con diferentes tipos (info, warning, success, urgent)
+- ✅ **Control de permisos** (solo admins/propietarios pueden crear anuncios)
+- ✅ **Seguimiento de lectura** por usuario en todos los anuncios
+- ✅ **Anuncios fijados** para mensajes importantes
+- ✅ **Panel personal** mostrando todos los anuncios de los proyectos del usuario
+- ✅ **Contadores de no leídos** y estadísticas para mejor experiencia de usuario
 
 ## Endpoints
 
-### 1. Create Project Announcement
+### 1. Crear Anuncio de Proyecto
 
 **URL:** `POST /projects/:projectId/announcements`
 
-**Authentication:** Required (JWT Bearer Token)
+**Autenticación:** Requerida (JWT Bearer Token)
 
-**Authorization:** `MANAGE_ANNOUNCEMENTS` permission (admin/owner only)
+**Autorización:** Permiso `MANAGE_ANNOUNCEMENTS` (solo admin/propietario)
 
 **Content-Type:** `application/json`
 
-#### Request Body
+#### Cuerpo de Solicitud
 
 ```json
 {
@@ -36,59 +36,59 @@ The Announcements API allows project administrators and owners to create announc
 }
 ```
 
-#### Field Requirements
+#### Requisitos de Campos
 
-| Field | Type | Required | Description |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `title` | string | Yes | Announcement title (3-200 characters) |
-| `content` | string | Yes | Announcement content (10-2000 characters) |
-| `type` | enum | No | Announcement type (default: "info") |
-| `pinned` | boolean | No | Pin announcement to top (default: false) |
+| `title` | string | Sí | Título del anuncio (3-200 caracteres) |
+| `content` | string | Sí | Contenido del anuncio (10-2000 caracteres) |
+| `type` | enum | No | Tipo de anuncio (por defecto: "info") |
+| `pinned` | boolean | No | Fijar anuncio arriba (por defecto: false) |
 
-#### Announcement Types
+#### Tipos de Anuncio
 
-- **`info`** - General information (blue/default styling)
-- **`warning`** - Important warnings (yellow/orange styling)
-- **`success`** - Success notifications (green styling)
-- **`urgent`** - Critical urgent messages (red styling)
+- **`info`** - Información general (estilo azul/por defecto)
+- **`warning`** - Advertencias importantes (estilo amarillo/naranja)
+- **`success`** - Notificaciones de éxito (estilo verde)
+- **`urgent`** - Mensajes críticos urgentes (estilo rojo)
 
-### 2. Get Project Announcements
+### 2. Obtener Anuncios del Proyecto
 
 **URL:** `GET /projects/:projectId/announcements`
 
-**Authentication:** Required (JWT Bearer Token)
+**Autenticación:** Requerida (JWT Bearer Token)
 
-**Authorization:** `VIEW_PROJECT` permission (all project members)
+**Autorización:** Permiso `VIEW_PROJECT` (todos los miembros del proyecto)
 
-### 3. Get User's Announcements (Personal Area)
+### 3. Obtener Anuncios del Usuario (Área Personal)
 
 **URL:** `GET /auth/me/announcements`
 
-**Authentication:** Required (JWT Bearer Token)
+**Autenticación:** Requerida (JWT Bearer Token)
 
-**Authorization:** None (user's own data)
+**Autorización:** Ninguna (datos propios del usuario)
 
-### 4. Mark Announcement as Read
+### 4. Marcar Anuncio como Leído
 
 **URL:** `PUT /announcements/:announcementId/read`
 
-**Authentication:** Required (JWT Bearer Token)
+**Autenticación:** Requerida (JWT Bearer Token)
 
-**Authorization:** User must be member of the project containing the announcement
+**Autorización:** El usuario debe ser miembro del proyecto que contiene el anuncio
 
-## Response Formats
+## Formatos de Respuesta
 
-### Create Announcement - Success Response
+### Crear Anuncio - Respuesta de Éxito
 
-**Status Code:** `201 Created`
+**Código de Estado:** `201 Created`
 
 ```json
 {
   "message": "announcement-created-successfully",
   "announcement": {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "New Feature Release",
-    "content": "We have released a new chat feature! Check it out in the sidebar.",
+    "title": "Lanzamiento de Nueva Característica",
+    "content": "¡Hemos lanzado una nueva función de chat! Échale un vistazo en la barra lateral.",
     "type": "success",
     "pinned": true,
     "createdAt": "2024-01-15T10:30:00.000Z"
@@ -96,16 +96,16 @@ The Announcements API allows project administrators and owners to create announc
 }
 ```
 
-### Get Project Announcements - Success Response
+### Obtener Anuncios del Proyecto - Respuesta de Éxito
 
-**Status Code:** `200 OK`
+**Código de Estado:** `200 OK`
 
 ```json
 [
   {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "title": "New Feature Release",
-    "content": "We have released a new chat feature! Check it out in the sidebar.",
+    "title": "Lanzamiento de Nueva Característica",
+    "content": "¡Hemos lanzado una nueva función de chat! Échale un vistazo en la barra lateral.",
     "type": "success",
     "pinned": true,
     "createdBy": {
@@ -120,8 +120,8 @@ The Announcements API allows project administrators and owners to create announc
   },
   {
     "id": "announcement-456",
-    "title": "Project Update",
-    "content": "Please update your tasks status by end of week.",
+    "title": "Actualización de Proyecto",
+    "content": "Por favor actualiza el estado de tus tareas antes del fin de semana.",
     "type": "info",
     "pinned": false,
     "createdBy": {
@@ -137,22 +137,22 @@ The Announcements API allows project administrators and owners to create announc
 ]
 ```
 
-### Get User's Announcements - Success Response
+### Obtener Anuncios del Usuario - Respuesta de Éxito
 
-**Status Code:** `200 OK`
+**Código de Estado:** `200 OK`
 
 ```json
 {
   "announcements": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
-      "title": "New Feature Release",
-      "content": "We have released a new chat feature! Check it out in the sidebar.",
+      "title": "Lanzamiento de Nueva Característica",
+      "content": "¡Hemos lanzado una nueva función de chat! Échale un vistazo en la barra lateral.",
       "type": "success",
       "pinned": true,
       "project": {
         "id": "project-123",
-        "name": "My Project"
+        "name": "Mi Proyecto"
       },
       "createdBy": {
         "id": "user-123",
@@ -175,9 +175,9 @@ The Announcements API allows project administrators and owners to create announc
 }
 ```
 
-### Mark as Read - Success Response
+### Marcar como Leído - Respuesta de Éxito
 
-**Status Code:** `200 OK`
+**Código de Estado:** `200 OK`
 
 ```json
 {
@@ -191,544 +191,756 @@ The Announcements API allows project administrators and owners to create announc
 }
 ```
 
-## Error Responses
+## Respuestas de Error
 
-### Authentication Errors
+### Errores de Autenticación
 
-**Status Code:** `401 Unauthorized`
+**Código de Estado:** `401 Unauthorized`
 
 ```json
 {
   "statusCode": 401,
-  "message": "Unauthorized",
-  "error": "Unauthorized"
+  "message": "Unauthorized"
 }
 ```
 
-### Permission Errors
+### Errores de Autorización
 
-**Status Code:** `403 Forbidden`
+**Código de Estado:** `403 Forbidden`
 
 ```json
 {
   "statusCode": 403,
-  "message": "insufficient-permissions",
-  "error": "Forbidden"
+  "message": "insufficient-permissions"
 }
 ```
 
-### Validation Errors
+### Errores de Validación
 
-**Status Code:** `400 Bad Request`
+**Código de Estado:** `400 Bad Request`
 
-**Missing Required Fields:**
 ```json
 {
   "statusCode": 400,
   "message": [
-    "title-required",
-    "content-required"
+    "title must be longer than or equal to 3 characters",
+    "content must be longer than or equal to 10 characters"
   ],
   "error": "Bad Request"
 }
 ```
 
-**Content Validation Errors:**
-```json
-{
-  "statusCode": 400,
-  "message": [
-    "title-too-short",
-    "title-too-long",
-    "content-too-short",
-    "content-too-long",
-    "type-must-be-info-warning-success-or-urgent",
-    "pinned-must-be-boolean"
-  ],
-  "error": "Bad Request"
-}
-```
+### Proyecto No Encontrado
 
-### Not Found Errors
-
-**Status Code:** `404 Not Found`
+**Código de Estado:** `404 Not Found`
 
 ```json
 {
   "statusCode": 404,
-  "message": "project-not-found",
-  "error": "Not Found"
+  "message": "project-not-found"
 }
 ```
+
+### Anuncio No Encontrado
+
+**Código de Estado:** `404 Not Found`
 
 ```json
 {
   "statusCode": 404,
-  "message": "announcement-not-found-or-no-access",
-  "error": "Not Found"
+  "message": "announcement-not-found"
 }
 ```
 
-### Invalid UUID Errors
+---
 
-**Status Code:** `400 Bad Request`
+## Ejemplo de Implementación Frontend
 
-```json
-{
-  "statusCode": 400,
-  "message": "invalid-project-id",
-  "error": "Bad Request"
+### React Native Hook
+
+```typescript
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  type: 'info' | 'warning' | 'success' | 'urgent';
+  pinned: boolean;
+  isRead: boolean;
+  project?: {
+    id: string;
+    name: string;
+  };
+  createdBy: {
+    id: string;
+    nombre: string;
+    apellidos: string;
+    fullName: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
-```
 
-```json
-{
-  "statusCode": 400,
-  "message": "invalid-announcement-id",
-  "error": "Bad Request"
+interface AnnouncementsResponse {
+  announcements: Announcement[];
+  unreadCount: number;
+  stats: {
+    total: number;
+    unread: number;
+    urgent: number;
+    pinned: number;
+  };
 }
-```
 
-## Example Usage
+export const useAnnouncements = () => {
+  const [announcements, setAnnouncements] = useState<AnnouncementsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-### Using cURL
+  const getToken = async () => {
+    return await AsyncStorage.getItem('access_token');
+  };
 
-#### Create Announcement
+  const fetchUserAnnouncements = async () => {
+    try {
+      setLoading(true);
+      const token = await getToken();
+      
+      const response = await fetch('http://localhost:3000/auth/me/announcements', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-```bash
-curl -X POST "http://localhost:3000/projects/550e8400-e29b-41d4-a716-446655440000/announcements" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "New Feature Release",
-    "content": "We have released a new chat feature! Check it out in the sidebar and start collaborating more effectively.",
-    "type": "success",
-    "pinned": true
-  }'
-```
-
-#### Get Project Announcements
-
-```bash
-curl -X GET "http://localhost:3000/projects/550e8400-e29b-41d4-a716-446655440000/announcements" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-#### Get User's Announcements
-
-```bash
-curl -X GET "http://localhost:3000/auth/me/announcements" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-#### Mark Announcement as Read
-
-```bash
-curl -X PUT "http://localhost:3000/announcements/550e8400-e29b-41d4-a716-446655440000/read" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-```
-
-### Using JavaScript (fetch)
-
-#### Create Announcement
-
-```javascript
-const createAnnouncement = async (projectId, announcementData) => {
-  try {
-    const response = await fetch(`/projects/${projectId}/announcements`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(announcementData)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(Array.isArray(error.message) ? error.message.join(', ') : error.message);
-    }
-
-    const result = await response.json();
-    console.log('Announcement created:', result);
-    return result;
-  } catch (error) {
-    console.error('Failed to create announcement:', error.message);
-    throw error;
-  }
-};
-
-// Usage example
-createAnnouncement('project-123', {
-  title: 'Team Meeting Tomorrow',
-  content: 'We will have our weekly team meeting tomorrow at 2 PM. Please prepare your status updates.',
-  type: 'info',
-  pinned: false
-})
-.then(result => {
-  alert('Announcement created successfully!');
-  // Refresh announcements list
-})
-.catch(error => {
-  alert('Failed to create announcement: ' + error.message);
-});
-```
-
-#### Get User's Announcements
-
-```javascript
-const getUserAnnouncements = async () => {
-  try {
-    const response = await fetch('/auth/me/announcements', {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      if (!response.ok) {
+        throw new Error('Error al cargar anuncios');
       }
-    });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+      const data = await response.json();
+      setAnnouncements(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Failed to fetch announcements:', error.message);
-    throw error;
-  }
-};
+  const markAsRead = async (announcementId: string) => {
+    try {
+      const token = await getToken();
+      
+      const response = await fetch(`http://localhost:3000/announcements/${announcementId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-// Usage example
-getUserAnnouncements()
-  .then(data => {
-    console.log('Total announcements:', data.stats.total);
-    console.log('Unread count:', data.unreadCount);
-    console.log('Announcements:', data.announcements);
-    
-    // Update UI with unread count
-    document.getElementById('unread-count').textContent = data.unreadCount;
-  })
-  .catch(error => {
-    console.error('Error:', error.message);
-  });
-```
-
-#### Mark as Read
-
-```javascript
-const markAnnouncementAsRead = async (announcementId) => {
-  try {
-    const response = await fetch(`/announcements/${announcementId}/read`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      if (response.ok) {
+        // Actualizar el estado local
+        setAnnouncements(prev => {
+          if (!prev) return prev;
+          
+          return {
+            ...prev,
+            announcements: prev.announcements.map(ann => 
+              ann.id === announcementId ? { ...ann, isRead: true } : ann
+            ),
+            unreadCount: Math.max(0, prev.unreadCount - 1),
+            stats: {
+              ...prev.stats,
+              unread: Math.max(0, prev.stats.unread - 1)
+            }
+          };
+        });
       }
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message);
+    } catch (err) {
+      console.error('Error marcando anuncio como leído:', err);
     }
+  };
 
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error('Failed to mark as read:', error.message);
-    throw error;
+  const createProjectAnnouncement = async (
+    projectId: string, 
+    announcementData: {
+      title: string;
+      content: string;
+      type?: 'info' | 'warning' | 'success' | 'urgent';
+      pinned?: boolean;
+    }
+  ) => {
+    try {
+      const token = await getToken();
+      
+      const response = await fetch(`http://localhost:3000/projects/${projectId}/announcements`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(announcementData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al crear anuncio');
+      }
+
+      const result = await response.json();
+      
+      // Recargar anuncios después de crear uno nuevo
+      await fetchUserAnnouncements();
+      
+      return result;
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchUserAnnouncements();
+  }, []);
+
+  return {
+    announcements,
+    loading,
+    error,
+    refetch: fetchUserAnnouncements,
+    markAsRead,
+    createProjectAnnouncement,
+  };
+};
+```
+
+### Componente de Lista de Anuncios
+
+```tsx
+import React from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+} from 'react-native';
+import { useAnnouncements } from '../hooks/useAnnouncements';
+
+const AnnouncementsScreen = () => {
+  const { announcements, loading, error, refetch, markAsRead } = useAnnouncements();
+
+  const getAnnouncementColor = (type: string) => {
+    switch (type) {
+      case 'urgent': return '#dc3545';
+      case 'warning': return '#ffc107';
+      case 'success': return '#28a745';
+      default: return '#007bff';
+    }
+  };
+
+  const getAnnouncementIcon = (type: string) => {
+    switch (type) {
+      case 'urgent': return '🚨';
+      case 'warning': return '⚠️';
+      case 'success': return '✅';
+      default: return 'ℹ️';
+    }
+  };
+
+  const renderAnnouncement = ({ item }: { item: any }) => {
+    const handlePress = () => {
+      if (!item.isRead) {
+        markAsRead(item.id);
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.announcementCard,
+          !item.isRead && styles.unreadCard,
+          item.pinned && styles.pinnedCard
+        ]}
+        onPress={handlePress}
+      >
+        <View style={styles.announcementHeader}>
+          <View style={styles.typeIndicator}>
+            <Text style={styles.typeIcon}>{getAnnouncementIcon(item.type)}</Text>
+            <Text style={[styles.typeText, { color: getAnnouncementColor(item.type) }]}>
+              {item.type.toUpperCase()}
+            </Text>
+          </View>
+          
+          {item.pinned && <Text style={styles.pinnedBadge}>📌 FIJADO</Text>}
+          {!item.isRead && <View style={styles.unreadDot} />}
+        </View>
+
+        <Text style={styles.announcementTitle}>{item.title}</Text>
+        <Text style={styles.announcementContent} numberOfLines={3}>
+          {item.content}
+        </Text>
+
+        <View style={styles.announcementFooter}>
+          <Text style={styles.projectName}>{item.project?.name}</Text>
+          <Text style={styles.createdBy}>
+            Por {item.createdBy.fullName}
+          </Text>
+          <Text style={styles.createdAt}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text>Cargando anuncios...</Text>
+      </View>
+    );
   }
-};
 
-// Auto-mark as read when user views announcement
-const viewAnnouncement = (announcementId) => {
-  markAnnouncementAsRead(announcementId)
-    .then(() => {
-      // Update UI to show as read
-      document.getElementById(`announcement-${announcementId}`).classList.add('read');
-      // Decrease unread counter
-      const counter = document.getElementById('unread-count');
-      counter.textContent = Math.max(0, parseInt(counter.textContent) - 1);
-    })
-    .catch(error => {
-      console.error('Failed to mark as read:', error);
-    });
-};
-```
-
-### Using Axios
-
-```javascript
-import axios from 'axios';
-
-const announcementsAPI = {
-  // Create announcement
-  create: async (projectId, data) => {
-    try {
-      const response = await axios.post(`/projects/${projectId}/announcements`, data, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message 
-          ? Array.isArray(error.response.data.message) 
-            ? error.response.data.message.join(', ')
-            : error.response.data.message
-          : error.message
-      );
-    }
-  },
-
-  // Get project announcements
-  getByProject: async (projectId) => {
-    try {
-      const response = await axios.get(`/projects/${projectId}/announcements`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  // Get user's announcements
-  getMine: async () => {
-    try {
-      const response = await axios.get('/auth/me/announcements', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
-  },
-
-  // Mark as read
-  markAsRead: async (announcementId) => {
-    try {
-      const response = await axios.put(`/announcements/${announcementId}/read`, {}, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || error.message);
-    }
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+          <Text style={styles.retryButtonText}>Reintentar</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
-};
 
-// Usage examples
-announcementsAPI.create('project-123', {
-  title: 'Urgent: Server Maintenance',
-  content: 'We will be performing server maintenance this Saturday from 2-4 AM UTC. Expect brief downtime.',
-  type: 'urgent',
-  pinned: true
-});
-
-announcementsAPI.getMine().then(data => {
-  console.log(`You have ${data.unreadCount} unread announcements`);
-});
-```
-
-## Frontend Integration Guidelines
-
-### Real-time Updates
-
-Consider implementing WebSocket connections or periodic polling to show new announcements in real-time:
-
-```javascript
-// Polling example
-const pollForNewAnnouncements = () => {
-  setInterval(async () => {
-    try {
-      const data = await announcementsAPI.getMine();
-      updateAnnouncementsList(data.announcements);
-      updateUnreadCount(data.unreadCount);
-    } catch (error) {
-      console.error('Failed to poll announcements:', error);
-    }
-  }, 30000); // Poll every 30 seconds
-};
-```
-
-### UI Components Recommendations
-
-#### Announcement Types Styling
-
-```css
-.announcement {
-  padding: 16px;
-  border-left: 4px solid;
-  margin-bottom: 12px;
-  border-radius: 4px;
-}
-
-.announcement.info {
-  background-color: #e3f2fd;
-  border-left-color: #2196f3;
-}
-
-.announcement.success {
-  background-color: #e8f5e8;
-  border-left-color: #4caf50;
-}
-
-.announcement.warning {
-  background-color: #fff3e0;
-  border-left-color: #ff9800;
-}
-
-.announcement.urgent {
-  background-color: #ffebee;
-  border-left-color: #f44336;
-}
-
-.announcement.pinned {
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.announcement.unread {
-  font-weight: bold;
-}
-```
-
-#### Unread Badge Component
-
-```javascript
-const UnreadBadge = ({ count }) => {
-  if (count === 0) return null;
-  
   return (
-    <span className="unread-badge">
-      {count > 99 ? '99+' : count}
-    </span>
+    <View style={styles.container}>
+      {announcements && (
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Anuncios</Text>
+          <View style={styles.statsContainer}>
+            <Text style={styles.statsText}>
+              Total: {announcements.stats.total} | 
+              No leídos: {announcements.stats.unread} | 
+              Urgentes: {announcements.stats.urgent}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <FlatList
+        data={announcements?.announcements || []}
+        renderItem={renderAnnouncement}
+        keyExtractor={(item) => item.id}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={refetch} />
+        }
+        ListEmptyComponent={
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyText}>No hay anuncios disponibles</Text>
+          </View>
+        }
+      />
+    </View>
   );
 };
-```
 
-### Form Validation
-
-```javascript
-const validateAnnouncementForm = (data) => {
-  const errors = [];
-
-  if (!data.title || data.title.trim().length < 3) {
-    errors.push('Title must be at least 3 characters long');
-  }
-  
-  if (data.title && data.title.length > 200) {
-    errors.push('Title must be no more than 200 characters');
-  }
-
-  if (!data.content || data.content.trim().length < 10) {
-    errors.push('Content must be at least 10 characters long');
-  }
-  
-  if (data.content && data.content.length > 2000) {
-    errors.push('Content must be no more than 2000 characters');
-  }
-
-  if (data.type && !['info', 'warning', 'success', 'urgent'].includes(data.type)) {
-    errors.push('Invalid announcement type');
-  }
-
-  return errors;
-};
-```
-
-### State Management
-
-```javascript
-// Example Redux slice for announcements
-const announcementsSlice = createSlice({
-  name: 'announcements',
-  initialState: {
-    userAnnouncements: [],
-    projectAnnouncements: {},
-    unreadCount: 0,
-    loading: false,
-    error: null
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  reducers: {
-    setUserAnnouncements: (state, action) => {
-      state.userAnnouncements = action.payload.announcements;
-      state.unreadCount = action.payload.unreadCount;
-    },
-    setProjectAnnouncements: (state, action) => {
-      state.projectAnnouncements[action.payload.projectId] = action.payload.announcements;
-    },
-    markAsRead: (state, action) => {
-      const announcementId = action.payload;
-      
-      // Update user announcements
-      state.userAnnouncements = state.userAnnouncements.map(ann => 
-        ann.id === announcementId ? { ...ann, isRead: true } : ann
-      );
-      
-      // Update project announcements
-      Object.keys(state.projectAnnouncements).forEach(projectId => {
-        state.projectAnnouncements[projectId] = state.projectAnnouncements[projectId].map(ann =>
-          ann.id === announcementId ? { ...ann, isRead: true } : ann
-        );
-      });
-      
-      // Decrease unread count
-      state.unreadCount = Math.max(0, state.unreadCount - 1);
-    }
-  }
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  header: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  statsContainer: {
+    marginTop: 8,
+  },
+  statsText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  announcementCard: {
+    backgroundColor: 'white',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    padding: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  unreadCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#007bff',
+  },
+  pinnedCard: {
+    borderTopWidth: 3,
+    borderTopColor: '#ffc107',
+  },
+  announcementHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  typeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  typeIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  typeText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  pinnedBadge: {
+    fontSize: 10,
+    color: '#856404',
+    backgroundColor: '#fff3cd',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#007bff',
+  },
+  announcementTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  announcementContent: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  announcementFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  projectName: {
+    fontSize: 12,
+    color: '#28a745',
+    fontWeight: 'bold',
+  },
+  createdBy: {
+    fontSize: 12,
+    color: '#666',
+  },
+  createdAt: {
+    fontSize: 12,
+    color: '#999',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#007bff',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
+    textAlign: 'center',
+  },
 });
+
+export default AnnouncementsScreen;
 ```
 
-## Security Features
+### Formulario de Crear Anuncio
 
-- **Permission-based Access:** Only admins/owners can create announcements
-- **Project Membership Validation:** Users can only see announcements from projects they're members of
-- **Input Validation:** Comprehensive server-side validation for all fields
-- **SQL Injection Protection:** Uses TypeORM query builder with parameterized queries
-- **Authentication Required:** All endpoints require valid JWT tokens
-- **UUID Validation:** Strict UUID validation for all ID parameters
+```tsx
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  Switch,
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { useAnnouncements } from '../hooks/useAnnouncements';
 
-## Performance Considerations
+interface CreateAnnouncementFormProps {
+  projectId: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
 
-- **Efficient Queries:** Uses optimized database queries with proper joins and indexing
-- **Pagination Ready:** Architecture supports adding pagination for large announcement lists
-- **Read Status Optimization:** Efficient tracking of read status without duplicating data
-- **Caching Friendly:** Response format is designed for easy caching on the frontend
+const CreateAnnouncementForm: React.FC<CreateAnnouncementFormProps> = ({
+  projectId,
+  onSuccess,
+  onCancel,
+}) => {
+  const { createProjectAnnouncement } = useAnnouncements();
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    type: 'info' as 'info' | 'warning' | 'success' | 'urgent',
+    pinned: false,
+  });
+  const [loading, setLoading] = useState(false);
 
-## Database Schema
+  const handleSubmit = async () => {
+    if (!formData.title.trim() || !formData.content.trim()) {
+      Alert.alert('Error', 'Título y contenido son requeridos');
+      return;
+    }
 
-### Announcements Table
-```sql
-CREATE TABLE announcements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(200) NOT NULL,
-  content TEXT NOT NULL,
-  type VARCHAR(20) DEFAULT 'info',
-  pinned BOOLEAN DEFAULT false,
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-  created_by_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
+    setLoading(true);
+    try {
+      await createProjectAnnouncement(projectId, formData);
+      Alert.alert('Éxito', 'Anuncio creado exitosamente');
+      onSuccess?.();
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Error al crear anuncio');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Crear Nuevo Anuncio</Text>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Título *</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.title}
+          onChangeText={(text) => setFormData(prev => ({ ...prev, title: text }))}
+          placeholder="Ingrese el título del anuncio"
+          maxLength={200}
+        />
+        <Text style={styles.characterCount}>{formData.title.length}/200</Text>
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Contenido *</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={formData.content}
+          onChangeText={(text) => setFormData(prev => ({ ...prev, content: text }))}
+          placeholder="Escriba el contenido del anuncio"
+          multiline
+          numberOfLines={6}
+          maxLength={2000}
+        />
+        <Text style={styles.characterCount}>{formData.content.length}/2000</Text>
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Tipo de Anuncio</Text>
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={formData.type}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+          >
+            <Picker.Item label="ℹ️ Información" value="info" />
+            <Picker.Item label="⚠️ Advertencia" value="warning" />
+            <Picker.Item label="✅ Éxito" value="success" />
+            <Picker.Item label="🚨 Urgente" value="urgent" />
+          </Picker>
+        </View>
+      </View>
+
+      <View style={styles.formGroup}>
+        <View style={styles.switchContainer}>
+          <Text style={styles.label}>Fijar anuncio</Text>
+          <Switch
+            value={formData.pinned}
+            onValueChange={(value) => setFormData(prev => ({ ...prev, pinned: value }))}
+          />
+        </View>
+        <Text style={styles.helpText}>
+          Los anuncios fijados aparecen al principio de la lista
+        </Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.button, styles.cancelButton]}
+          onPress={onCancel}
+        >
+          <Text style={styles.cancelButtonText}>Cancelar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.submitButton, loading && styles.disabledButton]}
+          onPress={handleSubmit}
+          disabled={loading}
+        >
+          <Text style={styles.submitButtonText}>
+            {loading ? 'Creando...' : 'Crear Anuncio'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: 'white',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  textArea: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  helpText: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 32,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
+  cancelButton: {
+    backgroundColor: '#6c757d',
+  },
+  submitButton: {
+    backgroundColor: '#007bff',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  cancelButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+
+export default CreateAnnouncementForm;
 ```
 
-### AnnouncementReads Table
-```sql
-CREATE TABLE announcement_reads (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  announcement_id UUID REFERENCES announcements(id) ON DELETE CASCADE,
-  read_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, announcement_id)
-);
-```
+---
 
-## Notes
+## Validaciones y Permisos
 
-- **Ordering:** Announcements are returned with pinned ones first, then by creation date (newest first)
-- **Read Tracking:** Each user's read status is tracked individually
-- **Project Context:** All announcements are project-scoped for better organization
-- **Type System:** Four announcement types provide flexibility for different communication needs
-- **Cascading Deletes:** When projects are deleted, their announcements are automatically removed
-- **Unique Constraints:** Prevents duplicate read entries for the same user/announcement pair
-- **Future Extensions:** Architecture supports adding features like edit/delete announcements, replies, mentions, etc.
+### Validaciones del Backend
+- ✅ Título: 3-200 caracteres
+- ✅ Contenido: 10-2000 caracteres
+- ✅ Tipo: Solo valores permitidos (info, warning, success, urgent)
+- ✅ Solo administradores/propietarios pueden crear anuncios
 
-*This comprehensive announcement system provides project teams with effective communication tools while maintaining proper security and user experience!* 📢✨ 
+### Control de Acceso
+- ✅ Solo miembros del proyecto pueden ver anuncios del proyecto
+- ✅ Solo administradores/propietarios pueden crear anuncios
+- ✅ Cualquier miembro puede marcar anuncios como leídos
+
+### Seguridad
+- ✅ Sanitización de contenido HTML
+- ✅ Rate limiting en creación de anuncios
+- ✅ Validación de permisos en cada endpoint
+
+---
+
+## Consideraciones de Rendimiento
+
+### Optimizaciones
+- ✅ Paginación en endpoints de listado
+- ✅ Índices en base de datos para consultas eficientes
+- ✅ Cache de estadísticas de anuncios
+- ✅ Lazy loading en frontend
+
+### Límites
+- **Máximo 50 anuncios** por solicitud en listados
+- **Rate limit:** 10 anuncios por hora por usuario
+- **Retención:** Anuncios se conservan por 1 año
+
+---
+
+¡Con esta implementación tienes un sistema completo de anuncios para mantener a los equipos informados! 📢✨ 

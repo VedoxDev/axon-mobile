@@ -1,158 +1,158 @@
-# Chat API Documentation 💬
+# Documentación de API de Chat 💬
 
-## Overview
-The Chat system supports both **1:1 direct messages** and **project group conversations** with real-time WebSocket messaging and database persistence.
+## Resumen
+El sistema de Chat soporta tanto **mensajes directos 1:1** como **conversaciones grupales de proyecto** con mensajería WebSocket en tiempo real y persistencia en base de datos.
 
-## Features ✨
-- **Real-time messaging** with WebSocket
-- **Direct messages** (1:1 chat) between users
-- **Project conversations** (group chat) for project members
-- **Typing indicators** and online presence
-- **Message editing** and deletion
-- **Read receipts** and message search
-- **Message history** with pagination
-- **Fallback REST API** for reliability
+## Características ✨
+- **Mensajería en tiempo real** con WebSocket
+- **Mensajes directos** (chat 1:1) entre usuarios
+- **Conversaciones de proyecto** (chat grupal) para miembros del proyecto
+- **Indicadores de escritura** y presencia en línea
+- **Edición de mensajes** y eliminación
+- **Confirmaciones de lectura** y búsqueda de mensajes
+- **Historial de mensajes** con paginación
+- **API REST de respaldo** para confiabilidad
 
 ---
 
-## 🔌 WebSocket Connection
+## 🔌 Conexión WebSocket
 
-### Connect to Chat
+### Conectar al Chat
 ```javascript
 import { io } from 'socket.io-client';
 
-// Get token from AsyncStorage (React Native) or localStorage (web)
+// Obtener token de AsyncStorage (React Native) o localStorage (web)
 const token = await AsyncStorage.getItem('access_token'); // React Native
 // const token = localStorage.getItem('access_token'); // Web
 
 const socket = io('http://localhost:3000/chat', {
   auth: {
-    token: token // JWT token without 'Bearer ' prefix
+    token: token // Token JWT sin prefijo 'Bearer '
   }
 });
 
-// Connection events
+// Eventos de conexión
 socket.on('connect', () => {
-  console.log('Connected to chat!');
+  console.log('¡Conectado al chat!');
 });
 
 socket.on('disconnect', () => {
-  console.log('Disconnected from chat');
+  console.log('Desconectado del chat');
 });
 
-// Error handling
+// Manejo de errores
 socket.on('connect_error', (error) => {
-  console.error('Connection failed:', error.message);
-  // Token might be invalid or expired
+  console.error('Falló la conexión:', error.message);
+  // El token podría ser inválido o expirado
 });
 ```
 
-### Join Project Room
+### Unirse a Sala de Proyecto
 ```javascript
-// Join project for real-time messages
+// Unirse al proyecto para mensajes en tiempo real
 socket.emit('joinProject', { projectId: 'project-uuid' });
 
 socket.on('joinedProject', (data) => {
-  console.log('Joined project:', data.projectId);
+  console.log('Se unió al proyecto:', data.projectId);
 });
 ```
 
-### Send Messages
+### Enviar Mensajes
 ```javascript
-// Send direct message
+// Enviar mensaje directo
 socket.emit('sendMessage', {
-  content: 'Hey! How are you?',
+  content: '¡Hola! ¿Cómo estás?',
   recipientId: 'user-uuid'
 });
 
-// Send project message
+// Enviar mensaje de proyecto
 socket.emit('sendMessage', {
-  content: 'Meeting at 3pm today!',
+  content: '¡Reunión a las 3pm hoy!',
   projectId: 'project-uuid'
 });
 
-// Listen for new messages
+// Escuchar nuevos mensajes
 socket.on('newMessage', (message) => {
-  console.log('New message:', message);
+  console.log('Nuevo mensaje:', message);
   /*
   {
     id: 'msg-uuid',
-    content: 'Hey! How are you?',
+    content: '¡Hola! ¿Cómo estás?',
     senderId: 'sender-uuid',
     senderName: 'John Doe',
     createdAt: '2024-01-10T10:00:00.000Z',
-    type: 'direct', // or 'project'
-    recipientId: 'user-uuid', // for direct messages
-    projectId: 'project-uuid' // for project messages
+    type: 'direct', // o 'project'
+    recipientId: 'user-uuid', // para mensajes directos
+    projectId: 'project-uuid' // para mensajes de proyecto
   }
   */
 });
 
-// Confirmation when your message is sent
+// Confirmación cuando tu mensaje es enviado
 socket.on('messageSent', (message) => {
-  console.log('Message sent successfully:', message);
+  console.log('Mensaje enviado exitosamente:', message);
 });
 ```
 
-### Typing Indicators
+### Indicadores de Escritura
 ```javascript
-// Show typing indicator
+// Mostrar indicador de escritura
 socket.emit('typing', {
-  recipientId: 'user-uuid', // for direct message
-  // OR projectId: 'project-uuid', // for project message
+  recipientId: 'user-uuid', // para mensaje directo
+  // O projectId: 'project-uuid', // para mensaje de proyecto
   typing: true
 });
 
-// Stop typing indicator
+// Detener indicador de escritura
 socket.emit('typing', {
   recipientId: 'user-uuid',
   typing: false
 });
 
-// Listen for typing events
+// Escuchar eventos de escritura
 socket.on('typing', (data) => {
-  console.log('User typing:', data);
+  console.log('Usuario escribiendo:', data);
   /*
   {
     userId: 'user-uuid',
     typing: true,
     timestamp: '2024-01-10T10:00:00.000Z',
-    type: 'direct' // or 'project'
+    type: 'direct' // o 'project'
   }
   */
 });
 ```
 
-### Online Presence
+### Presencia en Línea
 ```javascript
-// Get online users
+// Obtener usuarios en línea
 socket.emit('getOnlineUsers');
 
 socket.on('onlineUsers', (data) => {
-  console.log('Online users:', data.users);
+  console.log('Usuarios en línea:', data.users);
 });
 
-// Listen for user status changes
+// Escuchar cambios de estado de usuario
 socket.on('userOnline', (data) => {
-  console.log('User went online:', data.userId);
+  console.log('Usuario se conectó:', data.userId);
 });
 
 socket.on('userOffline', (data) => {
-  console.log('User went offline:', data.userId);
+  console.log('Usuario se desconectó:', data.userId);
 });
 ```
 
 ---
 
-## 🌐 REST API Endpoints
+## 🌐 Endpoints de API REST
 
-### Get All Conversations
+### Obtener Todas las Conversaciones
 ```http
 GET /chat/conversations
 Authorization: Bearer <jwt-token>
 ```
 
-**Response:**
+**Respuesta:**
 ```json
 [
   {
@@ -165,7 +165,7 @@ Authorization: Bearer <jwt-token>
     },
     "lastMessage": {
       "id": "msg-uuid",
-      "content": "See you tomorrow!",
+      "content": "¡Nos vemos mañana!",
       "senderId": "user-uuid",
       "createdAt": "2024-01-10T15:30:00.000Z",
       "isRead": true
@@ -176,11 +176,11 @@ Authorization: Bearer <jwt-token>
     "project": {
       "id": "project-uuid",
       "name": "Axon Backend",
-      "description": "Main backend project"
+      "description": "Proyecto principal del backend"
     },
     "lastMessage": {
       "id": "msg-uuid",
-      "content": "Great work everyone!",
+      "content": "¡Excelente trabajo todos!",
       "senderId": "user-uuid",
       "senderName": "Victor Fonseca",
       "createdAt": "2024-01-10T14:20:00.000Z",
@@ -190,19 +190,19 @@ Authorization: Bearer <jwt-token>
 ]
 ```
 
-### Get Direct Message History
+### Obtener Historial de Mensajes Directos
 ```http
 GET /chat/direct/{userId}?page=1&limit=50
 Authorization: Bearer <jwt-token>
 ```
 
-### Mark Direct Conversation as Read
+### Marcar Conversación Directa como Leída
 ```http
 PUT /chat/direct/{userId}/read
 Authorization: Bearer <jwt-token>
 ```
 
-**Response:**
+**Respuesta:**
 ```json
 {
   "message": "messages-marked-as-read",
@@ -210,26 +210,26 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-**Important:** Only marks as read messages **sent TO you** from that user, NOT your outgoing messages.
+**Importante:** Solo marca como leídos los mensajes **enviados A ti** de ese usuario, NO tus mensajes salientes.
 
-### Get Project Message History
+### Obtener Historial de Mensajes del Proyecto
 ```http
 GET /chat/project/{projectId}?page=1&limit=50
 Authorization: Bearer <jwt-token>
 ```
 
-**Response (both endpoints):**
+**Respuesta (ambos endpoints):**
 ```json
 [
   {
     "id": "msg-uuid-1",
-    "content": "Hello everyone!",
+    "content": "¡Hola todos!",
     "sender": {
       "id": "user-uuid",
       "nombre": "Victor",
       "apellidos": "Fonseca"
     },
-    "recipient": null, // for project messages
+    "recipient": null, // para mensajes de proyecto
     "project": {
       "id": "project-uuid",
       "name": "Axon Backend"
@@ -242,383 +242,959 @@ Authorization: Bearer <jwt-token>
 ]
 ```
 
-### Create Message (REST Fallback)
+### Crear Mensaje (REST de Respaldo)
 ```http
 POST /chat/messages
 Authorization: Bearer <jwt-token>
 Content-Type: application/json
 
 {
-  "content": "Hello from REST API!",
-  "recipientId": "user-uuid" // for direct message
-  // OR "projectId": "project-uuid" // for project message
+  "content": "Hola, ¿cómo va el proyecto?",
+  "recipientId": "user-uuid" // para mensaje directo
+  // O "projectId": "project-uuid" // para mensaje de proyecto
 }
 ```
 
-### Update Message
+### Editar Mensaje
 ```http
 PUT /chat/messages/{messageId}
 Authorization: Bearer <jwt-token>
 
 {
-  "content": "Updated message content"
+  "content": "Mensaje editado"
 }
 ```
 
-### Delete Message
+### Eliminar Mensaje
 ```http
 DELETE /chat/messages/{messageId}
 Authorization: Bearer <jwt-token>
 ```
 
-### Mark Message as Read
-```http
-PUT /chat/messages/{messageId}/read
-Authorization: Bearer <jwt-token>
-```
-
-### Search Messages
-```http
-GET /chat/search?q=hello&projectId=project-uuid&page=1&limit=20
-Authorization: Bearer <jwt-token>
-```
-
 ---
 
-## 💡 Usage Examples
+## 📱 Implementación React Native
 
-### Complete Chat Integration
+### 1. Hook de Chat
 ```javascript
-class ChatManager {
-  constructor(token) {
-    this.socket = io('http://localhost:3000/chat', {
-      auth: { token }
-    });
-    
-    this.setupEventListeners();
-  }
+import { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-  setupEventListeners() {
-    // Connection
-    this.socket.on('connect', () => {
-      console.log('🟢 Connected to chat');
-      this.getOnlineUsers();
-    });
+export const useChat = () => {
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState(new Map());
 
-    // New messages
-    this.socket.on('newMessage', (message) => {
-      this.displayMessage(message);
-      this.playNotificationSound();
-    });
-
-    // Typing indicators
-    this.socket.on('typing', (data) => {
-      this.showTypingIndicator(data);
-    });
-
-    // Presence updates
-    this.socket.on('userOnline', (data) => {
-      this.updateUserStatus(data.userId, 'online');
-    });
-
-    this.socket.on('userOffline', (data) => {
-      this.updateUserStatus(data.userId, 'offline');
-    });
-  }
-
-  // Send direct message
-  sendDirectMessage(recipientId, content) {
-    this.socket.emit('sendMessage', {
-      content,
-      recipientId
-    });
-  }
-
-  // Send project message
-  sendProjectMessage(projectId, content) {
-    this.socket.emit('sendMessage', {
-      content,
-      projectId
-    });
-  }
-
-  // Join project room
-  joinProject(projectId) {
-    this.socket.emit('joinProject', { projectId });
-  }
-
-  // Show typing
-  startTyping(recipientId = null, projectId = null) {
-    this.socket.emit('typing', {
-      recipientId,
-      projectId,
-      typing: true
-    });
-  }
-
-  // Stop typing
-  stopTyping(recipientId = null, projectId = null) {
-    this.socket.emit('typing', {
-      recipientId,
-      projectId,
-      typing: false
-    });
-  }
-
-  // Get online users
-  getOnlineUsers() {
-    this.socket.emit('getOnlineUsers');
-    
-    this.socket.on('onlineUsers', (data) => {
-      this.updateOnlineUsersList(data.users);
-    });
-  }
-
-  displayMessage(message) {
-    // Add message to chat UI
-    const messageElement = document.createElement('div');
-    messageElement.innerHTML = `
-      <div class="message ${message.senderId === currentUserId ? 'own' : ''}">
-        <div class="sender">${message.senderName}</div>
-        <div class="content">${message.content}</div>
-        <div class="time">${new Date(message.createdAt).toLocaleTimeString()}</div>
-      </div>
-    `;
-    document.getElementById('chat-messages').appendChild(messageElement);
-  }
-}
-
-// Initialize chat
-const chat = new ChatManager(localStorage.getItem('jwt-token'));
-```
-
-### Chat Input with Typing Indicators
-```javascript
-const chatInput = document.getElementById('chat-input');
-const sendButton = document.getElementById('send-button');
-let typingTimer;
-let isTyping = false;
-
-chatInput.addEventListener('input', () => {
-  // Start typing indicator
-  if (!isTyping) {
-    chat.startTyping(currentRecipientId, currentProjectId);
-    isTyping = true;
-  }
-
-  // Reset timer
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => {
-    chat.stopTyping(currentRecipientId, currentProjectId);
-    isTyping = false;
-  }, 1000); // Stop typing after 1 second of inactivity
-});
-
-sendButton.addEventListener('click', () => {
-  const content = chatInput.value.trim();
-  if (!content) return;
-
-  // Send message
-  if (currentRecipientId) {
-    chat.sendDirectMessage(currentRecipientId, content);
-  } else if (currentProjectId) {
-    chat.sendProjectMessage(currentProjectId, content);
-  }
-
-  // Clear input and stop typing
-  chatInput.value = '';
-  chat.stopTyping(currentRecipientId, currentProjectId);
-  isTyping = false;
-});
-```
-
-### Message History Loading
-```javascript
-async function loadMessageHistory(type, id, page = 1) {
-  const token = localStorage.getItem('jwt-token');
-  const endpoint = type === 'direct' 
-    ? `/chat/direct/${id}?page=${page}&limit=50`
-    : `/chat/project/${id}?page=${page}&limit=50`;
-
-  try {
-    const response = await fetch(endpoint, {
-      headers: {
-        'Authorization': `Bearer ${token}`
+  useEffect(() => {
+    initializeSocket();
+    return () => {
+      if (socket) {
+        socket.disconnect();
       }
-    });
+    };
+  }, []);
 
-    const messages = await response.json();
-    
-    // Display messages in chronological order
-    messages.forEach(message => {
-      displayMessage(message);
-    });
+  const initializeSocket = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) return;
 
-    return messages;
-  } catch (error) {
-    console.error('Failed to load message history:', error);
-  }
-}
-```
+      const newSocket = io('http://localhost:3000/chat', {
+        auth: { token }
+      });
 
-### Mark Conversation as Read (Clear Unread Dots)
-```javascript
-async function openDirectChat(userId) {
-  const token = localStorage.getItem('jwt-token');
-  
-  try {
-    // 1. Load message history
-    await loadMessageHistory('direct', userId);
-    
-    // 2. Mark all incoming messages as read (clears unread dots)
-    const response = await fetch(`/chat/direct/${userId}/read`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    const result = await response.json();
-    console.log(`Marked ${result.markedCount} messages as read`);
-    
-    // 3. Update UI - remove unread indicators
-    updateChatUIAsRead(userId);
-    
-  } catch (error) {
-    console.error('Failed to open chat:', error);
-  }
-}
+      newSocket.on('connect', () => {
+        console.log('Conectado al chat');
+        setIsConnected(true);
+      });
 
-// React Native example
-async function openDirectChatRN(userId) {
-  const token = await AsyncStorage.getItem('access_token');
-  
-  try {
-    // Mark conversation as read when opening chat
-    const response = await fetch(`${API_BASE_URL}/chat/direct/${userId}/read`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      console.log(`✅ Marked ${result.markedCount} messages as read`);
-      
-      // Update state to remove unread indicators
-      setUnreadCounts(prev => ({
-        ...prev,
-        [userId]: 0 // Clear unread count for this user
-      }));
+      newSocket.on('disconnect', () => {
+        console.log('Desconectado del chat');
+        setIsConnected(false);
+      });
+
+      newSocket.on('newMessage', (message) => {
+        console.log('Nuevo mensaje recibido:', message);
+        setMessages(prev => [message, ...prev]);
+        updateConversationLastMessage(message);
+      });
+
+      newSocket.on('messageSent', (message) => {
+        console.log('Mensaje enviado:', message);
+        setMessages(prev => [message, ...prev]);
+        updateConversationLastMessage(message);
+      });
+
+      newSocket.on('typing', (data) => {
+        setTypingUsers(prev => {
+          const updated = new Map(prev);
+          if (data.typing) {
+            updated.set(data.userId, Date.now());
+          } else {
+            updated.delete(data.userId);
+          }
+          return updated;
+        });
+
+        // Limpiar indicadores de escritura después de 3 segundos
+        setTimeout(() => {
+          setTypingUsers(prev => {
+            const updated = new Map(prev);
+            updated.delete(data.userId);
+            return updated;
+          });
+        }, 3000);
+      });
+
+      newSocket.on('onlineUsers', (data) => {
+        setOnlineUsers(data.users);
+      });
+
+      newSocket.on('userOnline', (data) => {
+        setOnlineUsers(prev => [...prev, data.userId]);
+      });
+
+      newSocket.on('userOffline', (data) => {
+        setOnlineUsers(prev => prev.filter(id => id !== data.userId));
+      });
+
+      setSocket(newSocket);
+    } catch (error) {
+      console.error('Error inicializando socket:', error);
     }
-  } catch (error) {
-    console.error('Failed to mark messages as read:', error);
+  };
+
+  const updateConversationLastMessage = (message) => {
+    setConversations(prev => prev.map(conv => {
+      if (conv.type === 'direct' && 
+          (conv.partner.id === message.senderId || conv.partner.id === message.recipientId)) {
+        return { ...conv, lastMessage: message };
+      }
+      if (conv.type === 'project' && conv.project.id === message.projectId) {
+        return { ...conv, lastMessage: message };
+      }
+      return conv;
+    }));
+  };
+
+  const sendMessage = (content, recipientId = null, projectId = null) => {
+    if (!socket || !isConnected) {
+      console.error('Socket no conectado');
+      return;
+    }
+
+    const messageData = { content };
+    if (recipientId) messageData.recipientId = recipientId;
+    if (projectId) messageData.projectId = projectId;
+
+    socket.emit('sendMessage', messageData);
+  };
+
+  const sendTypingIndicator = (typing, recipientId = null, projectId = null) => {
+    if (!socket || !isConnected) return;
+
+    const data = { typing };
+    if (recipientId) data.recipientId = recipientId;
+    if (projectId) data.projectId = projectId;
+
+    socket.emit('typing', data);
+  };
+
+  const joinProject = (projectId) => {
+    if (!socket || !isConnected) return;
+    socket.emit('joinProject', { projectId });
+  };
+
+  const loadConversations = async () => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await fetch('http://localhost:3000/chat/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      setConversations(data);
+    } catch (error) {
+      console.error('Error cargando conversaciones:', error);
+    }
+  };
+
+  const loadMessages = async (type, id, page = 1) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const endpoint = type === 'direct' 
+        ? `/chat/direct/${id}?page=${page}&limit=50`
+        : `/chat/project/${id}?page=${page}&limit=50`;
+      
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      
+      if (page === 1) {
+        setMessages(data);
+      } else {
+        setMessages(prev => [...prev, ...data]);
+      }
+    } catch (error) {
+      console.error('Error cargando mensajes:', error);
+    }
+  };
+
+  const markAsRead = async (userId) => {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      await fetch(`http://localhost:3000/chat/direct/${userId}/read`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.error('Error marcando como leído:', error);
+    }
+  };
+
+  return {
+    socket,
+    messages,
+    conversations,
+    onlineUsers,
+    typingUsers,
+    isConnected,
+    sendMessage,
+    sendTypingIndicator,
+    joinProject,
+    loadConversations,
+    loadMessages,
+    markAsRead
+  };
+};
+```
+
+### 2. Componente de Chat
+```javascript
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+import { useChat } from './hooks/useChat';
+
+const ChatScreen = ({ route }) => {
+  const { chatType, chatId, chatName } = route.params;
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const flatListRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  
+  const {
+    messages,
+    isConnected,
+    typingUsers,
+    sendMessage,
+    sendTypingIndicator,
+    loadMessages,
+    markAsRead,
+    joinProject
+  } = useChat();
+
+  useEffect(() => {
+    // Cargar mensajes al entrar
+    loadMessages(chatType, chatId);
+    
+    // Unirse al proyecto si es chat de proyecto
+    if (chatType === 'project') {
+      joinProject(chatId);
+    }
+    
+    // Marcar como leído si es chat directo
+    if (chatType === 'direct') {
+      markAsRead(chatId);
+    }
+  }, [chatType, chatId]);
+
+  const handleSendMessage = () => {
+    if (!inputText.trim()) return;
+
+    const recipientId = chatType === 'direct' ? chatId : null;
+    const projectId = chatType === 'project' ? chatId : null;
+    
+    sendMessage(inputText.trim(), recipientId, projectId);
+    setInputText('');
+    
+    // Detener indicador de escritura
+    if (isTyping) {
+      sendTypingIndicator(false, recipientId, projectId);
+      setIsTyping(false);
+    }
+  };
+
+  const handleTextChange = (text) => {
+    setInputText(text);
+    
+    const recipientId = chatType === 'direct' ? chatId : null;
+    const projectId = chatType === 'project' ? chatId : null;
+    
+    // Iniciar indicador de escritura
+    if (!isTyping && text.length > 0) {
+      sendTypingIndicator(true, recipientId, projectId);
+      setIsTyping(true);
+    }
+    
+    // Reiniciar timeout para detener escritura
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      if (isTyping) {
+        sendTypingIndicator(false, recipientId, projectId);
+        setIsTyping(false);
+      }
+    }, 1000);
+  };
+
+  const renderMessage = ({ item }) => {
+    const isMyMessage = item.sender?.id === currentUserId; // Define currentUserId
+    
+    return (
+      <View style={{
+        alignSelf: isMyMessage ? 'flex-end' : 'flex-start',
+        backgroundColor: isMyMessage ? '#007AFF' : '#E5E5EA',
+        padding: 12,
+        margin: 4,
+        borderRadius: 18,
+        maxWidth: '80%'
+      }}>
+        {!isMyMessage && chatType === 'project' && (
+          <Text style={{ fontSize: 12, fontWeight: 'bold', marginBottom: 4 }}>
+            {item.sender?.nombre} {item.sender?.apellidos}
+          </Text>
+        )}
+        <Text style={{ 
+          color: isMyMessage ? 'white' : 'black',
+          fontSize: 16 
+        }}>
+          {item.content}
+        </Text>
+        <Text style={{
+          fontSize: 12,
+          color: isMyMessage ? 'rgba(255,255,255,0.7)' : '#666',
+          marginTop: 4,
+          alignSelf: 'flex-end'
+        }}>
+          {new Date(item.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+        </Text>
+      </View>
+    );
+  };
+
+  const renderTypingIndicator = () => {
+    const typingUsersList = Array.from(typingUsers.keys());
+    if (typingUsersList.length === 0) return null;
+
+    return (
+      <View style={{ padding: 10, alignItems: 'flex-start' }}>
+        <View style={{
+          backgroundColor: '#E5E5EA',
+          padding: 12,
+          borderRadius: 18,
+          maxWidth: '80%'
+        }}>
+          <Text style={{ color: '#666', fontStyle: 'italic' }}>
+            {typingUsersList.length === 1 
+              ? 'Escribiendo...' 
+              : `${typingUsersList.length} personas escribiendo...`}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: 'white' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      {/* Header */}
+      <View style={{ 
+        padding: 15, 
+        backgroundColor: '#F8F8F8',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0'
+      }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+          {chatName}
+        </Text>
+        <Text style={{ fontSize: 12, color: '#666' }}>
+          {isConnected ? 'Conectado' : 'Desconectado'}
+        </Text>
+      </View>
+
+      {/* Lista de mensajes */}
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        renderItem={renderMessage}
+        keyExtractor={(item) => item.id}
+        inverted
+        style={{ flex: 1, padding: 10 }}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd()}
+      />
+
+      {/* Indicador de escritura */}
+      {renderTypingIndicator()}
+
+      {/* Input de mensaje */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 10,
+        backgroundColor: '#F8F8F8',
+        borderTopWidth: 1,
+        borderTopColor: '#E0E0E0'
+      }}>
+        <TextInput
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: '#E0E0E0',
+            borderRadius: 20,
+            paddingHorizontal: 15,
+            paddingVertical: 10,
+            backgroundColor: 'white',
+            maxHeight: 100
+          }}
+          value={inputText}
+          onChangeText={handleTextChange}
+          placeholder="Escribe un mensaje..."
+          multiline
+        />
+        <TouchableOpacity
+          onPress={handleSendMessage}
+          disabled={!inputText.trim()}
+          style={{
+            marginLeft: 10,
+            backgroundColor: inputText.trim() ? '#007AFF' : '#C0C0C0',
+            borderRadius: 20,
+            paddingHorizontal: 20,
+            paddingVertical: 10
+          }}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>
+            Enviar
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
+};
+
+export default ChatScreen;
+```
+
+### 3. Lista de Conversaciones
+```javascript
+import React, { useEffect } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image
+} from 'react-native';
+import { useChat } from './hooks/useChat';
+import { useNavigation } from '@react-navigation/native';
+
+const ConversationsScreen = () => {
+  const navigation = useNavigation();
+  const { conversations, onlineUsers, loadConversations } = useChat();
+
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const renderConversation = ({ item }) => {
+    const isOnline = item.type === 'direct' && 
+      onlineUsers.includes(item.partner?.id);
+    
+    const lastMessageTime = item.lastMessage?.createdAt 
+      ? new Date(item.lastMessage.createdAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : '';
+
+    const conversationName = item.type === 'direct'
+      ? `${item.partner?.nombre} ${item.partner?.apellidos}`
+      : item.project?.name;
+
+    const lastMessagePreview = item.lastMessage?.content
+      ? item.lastMessage.content.substring(0, 50) + 
+        (item.lastMessage.content.length > 50 ? '...' : '')
+      : 'Sin mensajes';
+
+    return (
+      <TouchableOpacity
+        style={{
+          flexDirection: 'row',
+          padding: 15,
+          borderBottomWidth: 1,
+          borderBottomColor: '#E0E0E0',
+          backgroundColor: item.lastMessage?.isRead === false ? '#F0F8FF' : 'white'
+        }}
+        onPress={() => {
+          navigation.navigate('Chat', {
+            chatType: item.type,
+            chatId: item.type === 'direct' ? item.partner?.id : item.project?.id,
+            chatName: conversationName
+          });
+        }}
+      >
+        {/* Avatar placeholder */}
+        <View style={{
+          width: 50,
+          height: 50,
+          borderRadius: 25,
+          backgroundColor: '#E0E0E0',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginRight: 15
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold' }}>
+            {item.type === 'direct' 
+              ? `${item.partner?.nombre?.[0]}${item.partner?.apellidos?.[0]}`
+              : item.project?.name?.[0]
+            }
+          </Text>
+          
+          {/* Indicador de estado en línea */}
+          {isOnline && (
+            <View style={{
+              position: 'absolute',
+              bottom: 2,
+              right: 2,
+              width: 12,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: '#4CAF50',
+              borderWidth: 2,
+              borderColor: 'white'
+            }} />
+          )}
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <View style={{ 
+            flexDirection: 'row', 
+            justifyContent: 'space-between',
+            marginBottom: 5
+          }}>
+            <Text style={{ 
+              fontSize: 16, 
+              fontWeight: 'bold',
+              flex: 1
+            }}>
+              {conversationName}
+            </Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>
+              {lastMessageTime}
+            </Text>
+          </View>
+          
+          <Text style={{ 
+            fontSize: 14, 
+            color: '#666',
+            fontStyle: lastMessagePreview === 'Sin mensajes' ? 'italic' : 'normal'
+          }}>
+            {lastMessagePreview}
+          </Text>
+
+          {/* Indicador de mensaje no leído */}
+          {item.lastMessage?.isRead === false && (
+            <View style={{
+              position: 'absolute',
+              right: 0,
+              top: 20,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: '#007AFF'
+            }} />
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: 'white' }}>
+      <FlatList
+        data={conversations}
+        renderItem={renderConversation}
+        keyExtractor={(item) => 
+          item.type === 'direct' 
+            ? `direct-${item.partner?.id}` 
+            : `project-${item.project?.id}`
+        }
+        refreshing={false}
+        onRefresh={loadConversations}
+      />
+    </View>
+  );
+};
+
+export default ConversationsScreen;
+```
+
+---
+
+## ❌ Respuestas de Error
+
+### 400 Bad Request
+```json
+{
+  "statusCode": 400,
+  "message": ["content-required", "recipient-or-project-required"],
+  "error": "Bad Request"
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "statusCode": 403,
+  "message": "insufficient-permissions"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "statusCode": 404,
+  "message": "conversation-not-found"
+}
+```
+
+---
+
+## 🎯 Casos de Uso Avanzados
+
+### 1. Sistema de Notificaciones Push
+```javascript
+import messaging from '@react-native-firebase/messaging';
+
+class ChatNotificationManager {
+  constructor() {
+    this.setupFirebaseMessaging();
+  }
+
+  async setupFirebaseMessaging() {
+    // Solicitar permisos para notificaciones
+    const authStatus = await messaging().requestPermission();
+    const enabled =
+      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+    if (enabled) {
+      console.log('Permisos de notificación otorgados');
+    }
+
+    // Obtener token FCM
+    const fcmToken = await messaging().getToken();
+    if (fcmToken) {
+      console.log('Token FCM:', fcmToken);
+      // Enviar token al servidor para asociarlo al usuario
+      await this.registerFCMToken(fcmToken);
+    }
+
+    // Manejar mensajes cuando la app está en primer plano
+    messaging().onMessage(async remoteMessage => {
+      console.log('Mensaje recibido en primer plano:', remoteMessage);
+      this.showInAppNotification(remoteMessage);
+    });
+
+    // Manejar mensajes cuando la app está en background/cerrada
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
+      console.log('Mensaje recibido en background:', remoteMessage);
+    });
+  }
+
+  async registerFCMToken(token) {
+    try {
+      const authToken = await AsyncStorage.getItem('access_token');
+      await fetch('http://localhost:3000/auth/fcm-token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ fcmToken: token })
+      });
+    } catch (error) {
+      console.error('Error registrando token FCM:', error);
+    }
+  }
+
+  showInAppNotification(remoteMessage) {
+    // Mostrar notificación local cuando la app está activa
+    // Implementar usando react-native-notifications o similar
+  }
+}
+```
+
+### 2. Búsqueda de Mensajes
+```javascript
+class MessageSearchService {
+  async searchMessages(query, chatType, chatId) {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const endpoint = chatType === 'direct' 
+        ? `/chat/direct/${chatId}/search`
+        : `/chat/project/${chatId}/search`;
+      
+      const response = await fetch(
+        `http://localhost:3000${endpoint}?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error buscando mensajes:', error);
+      return [];
+    }
+  }
+
+  async searchAllConversations(query) {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await fetch(
+        `http://localhost:3000/chat/search?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error buscando en todas las conversaciones:', error);
+      return [];
+    }
+  }
+}
+```
+
+### 3. Filtros y Moderación
+```javascript
+class MessageModerationService {
+  constructor() {
+    this.bannedWords = ['spam', 'abuso']; // Configurar según necesidades
+  }
+
+  filterMessage(content) {
+    let filtered = content;
+    
+    this.bannedWords.forEach(word => {
+      const regex = new RegExp(word, 'gi');
+      filtered = filtered.replace(regex, '*'.repeat(word.length));
+    });
+
+    return filtered;
+  }
+
+  validateMessage(content) {
+    // Validaciones básicas
+    if (!content || content.trim().length === 0) {
+      throw new Error('El mensaje no puede estar vacío');
+    }
+
+    if (content.length > 1000) {
+      throw new Error('El mensaje es demasiado largo');
+    }
+
+    // Detectar spam (mensajes repetidos muy seguidos)
+    if (this.isSpam(content)) {
+      throw new Error('Detectado posible spam');
+    }
+
+    return true;
+  }
+
+  isSpam(content) {
+    // Implementar lógica de detección de spam
+    // Por ejemplo, verificar si es idéntico a mensajes recientes
+    return false;
   }
 }
 ```
 
 ---
 
-## 🔒 Security & Permissions
+## 🔐 Consideraciones de Seguridad
 
-1. **Authentication**: All endpoints require JWT token
-2. **Direct Messages**: Only sender and recipient can access
-3. **Project Messages**: Only project members can access
-4. **Message Editing**: Only sender can edit their messages
-5. **Message Deletion**: Only sender can delete their messages
-6. **WebSocket Authentication**: Token verified on connection
+### Autenticación WebSocket
+- Los tokens JWT deben incluirse en la conexión WebSocket
+- Tokens expirados resultan en desconexión automática
+- Re-autenticación automática cuando sea posible
 
----
-
-## 🎯 Integration with Existing System
-
-### User Assignment Flow
-1. Get project members from `GET /projects/{projectId}` (existing endpoint)
-2. Select users to start direct conversations
-3. Use project rooms for team discussions
-4. Integrate with task assignments for project communication
-
-### Notification Integration
+### Validación de Mensajes
 ```javascript
-// Listen for task assignments and send chat notifications
-socket.on('taskAssigned', (data) => {
-  chat.sendDirectMessage(data.assigneeId, 
-    `You've been assigned to task: ${data.taskTitle}`
-  );
-});
-
-// Notify project team about task updates
-socket.on('taskStatusChanged', (data) => {
-  chat.sendProjectMessage(data.projectId,
-    `Task "${data.taskTitle}" status changed to ${data.newStatus}`
-  );
-});
-```
-
----
-
-## 🚀 Real-time Features
-
-- ✅ **Instant messaging** - Messages appear immediately
-- ✅ **Typing indicators** - See when someone is typing
-- ✅ **Online presence** - Know who's online/offline
-- ✅ **Message delivery** - Confirmation when messages are sent
-- ✅ **Read receipts** - Track if messages are read
-- ✅ **Project rooms** - Real-time team communication
-- ✅ **Message search** - Find messages across conversations
-- ✅ **Message editing** - Update sent messages
-- ✅ **Fallback REST** - Works even without WebSocket
-
-Perfect for team collaboration! 🎉
-
----
-
-## 🔧 Troubleshooting
-
-### "cannot-message-yourself" Error
-This error occurs when the JWT token contains the wrong user ID. **Solution:**
-
-1. **Check JWT Token**: Verify the token contains the correct user ID
-```javascript
-// Decode JWT to check payload (client-side debugging)
-const payload = JSON.parse(atob(token.split('.')[1]));
-console.log('JWT payload:', payload); // Should show correct user ID
-```
-
-2. **Re-login**: If token is corrupted, have user login again
-```javascript
-// Clear bad token and redirect to login
-await AsyncStorage.removeItem('access_token');
-// Navigate to login screen
-```
-
-3. **Backend Logs**: Check server logs for detailed error info
-```bash
-# Look for these log messages:
-[ChatService] Creating message from user X to Y
-[ChatService] ERROR: User X tried to message themselves
-```
-
-### WebSocket Connection Issues
-```javascript
-socket.on('connect_error', (error) => {
-  console.log('Connection error:', error.message);
+const validateMessageContent = (content) => {
+  // Sanitizar HTML para prevenir XSS
+  const sanitized = content.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
   
-  if (error.message.includes('Authentication')) {
-    // Token invalid - redirect to login
-    await AsyncStorage.removeItem('access_token');
-    // Navigate to login
+  // Validar longitud
+  if (sanitized.length > 1000) {
+    throw new Error('Mensaje demasiado largo');
   }
-});
+  
+  // Filtrar contenido inapropiado
+  return sanitized.trim();
+};
 ```
 
-### Message Not Sending
-1. **Check Connection**: Ensure WebSocket is connected
-2. **Verify Data**: Ensure `recipientId` or `projectId` is valid UUID
-3. **Check Permissions**: Ensure user has access to project (for project messages)
+### Control de Acceso
+- Mensajes directos: Solo remitente y destinatario
+- Mensajes de proyecto: Solo miembros del proyecto
+- Historial limitado según permisos del usuario
 
-### Missing Messages
-1. **Join Project Room**: Ensure `socket.emit('joinProject', {projectId})` was called
-2. **Check Event Listeners**: Ensure `socket.on('newMessage', callback)` is set up
-3. **Verify User Rooms**: User should be in `user:${userId}` room automatically 
+---
+
+## 📊 Métricas y Análisis
+
+### Estadísticas de Chat
+```javascript
+class ChatAnalytics {
+  async getChatStats() {
+    try {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await fetch('http://localhost:3000/chat/analytics', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error obteniendo estadísticas:', error);
+      return null;
+    }
+  }
+
+  trackMessageSent(type, length) {
+    // Rastrear eventos para analytics
+    console.log(`Mensaje ${type} enviado, longitud: ${length}`);
+  }
+
+  trackTypingEvent(duration) {
+    // Rastrear tiempo de escritura para UX analytics
+    console.log(`Usuario escribió por ${duration}ms`);
+  }
+}
+```
+
+---
+
+## 🚀 Optimización de Rendimiento
+
+### Paginación Eficiente
+```javascript
+const MESSAGES_PER_PAGE = 20;
+
+const loadMoreMessages = async (chatType, chatId, page) => {
+  try {
+    const messages = await loadMessages(chatType, chatId, page);
+    
+    // Cargar solo si hay mensajes nuevos
+    if (messages.length > 0) {
+      setMessages(prev => [...prev, ...messages]);
+      return true; // Hay más mensajes
+    }
+    
+    return false; // No hay más mensajes
+  } catch (error) {
+    console.error('Error cargando más mensajes:', error);
+    return false;
+  }
+};
+```
+
+### Caché Local
+```javascript
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+class ChatCache {
+  static async cacheConversations(conversations) {
+    try {
+      await AsyncStorage.setItem(
+        'cached_conversations',
+        JSON.stringify({
+          data: conversations,
+          timestamp: Date.now()
+        })
+      );
+    } catch (error) {
+      console.error('Error guardando conversaciones en caché:', error);
+    }
+  }
+
+  static async getCachedConversations() {
+    try {
+      const cached = await AsyncStorage.getItem('cached_conversations');
+      if (!cached) return null;
+
+      const { data, timestamp } = JSON.parse(cached);
+      
+      // Caché válido por 5 minutos
+      if (Date.now() - timestamp < 5 * 60 * 1000) {
+        return data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error obteniendo conversaciones del caché:', error);
+      return null;
+    }
+  }
+
+  static async clearCache() {
+    try {
+      await AsyncStorage.multiRemove([
+        'cached_conversations',
+        'cached_messages'
+      ]);
+    } catch (error) {
+      console.error('Error limpiando caché:', error);
+    }
+  }
+}

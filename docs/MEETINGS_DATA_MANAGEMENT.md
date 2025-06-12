@@ -1,27 +1,27 @@
-# Meetings Data Management System 📅
+# Sistema de Gestión de Datos de Reuniones 📅
 
-## Overview
-This document explains how the mobile app handles meetings data, status management, fetching content, and displaying past vs future meetings. This guide is specifically focused on data management for the web frontend implementation.
+## Resumen
+Este documento explica cómo la aplicación móvil maneja los datos de reuniones, gestión de estados, obtención de contenido y visualización de reuniones pasadas vs futuras. Esta guía está específicamente enfocada en la gestión de datos para la implementación del frontend web.
 
 ---
 
-## 🎯 Core Data Structure
+## 🎯 Estructura de Datos Principal
 
-### Meeting Interface
+### Interfaz de Reunión
 ```typescript
 interface Meeting {
   id: string;
   title: string;
   description?: string;
-  scheduledAt: string;        // ISO date string (when meeting is scheduled)
-  duration: number;           // Duration in minutes
-  audioOnly: boolean;         // true = audio only, false = video call
+  scheduledAt: string;        // Cadena de fecha ISO (cuando está programada la reunión)
+  duration: number;           // Duración en minutos
+  audioOnly: boolean;         // true = solo audio, false = videollamada
   meetingType: 'project_meeting' | 'personal_meeting';
   status?: 'waiting' | 'active' | 'ended' | 'cancelled';
   
-  // Additional fields for completed meetings
-  startedAt?: string;         // When first person actually joined
-  endedAt?: string;           // When meeting actually ended
+  // Campos adicionales para reuniones completadas
+  startedAt?: string;         // Cuando la primera persona se unió realmente
+  endedAt?: string;           // Cuando la reunión terminó realmente
   
   initiator: {
     id: string;
@@ -30,7 +30,7 @@ interface Meeting {
     email?: string;
   };
   
-  project?: {                 // Only for project meetings
+  project?: {                 // Solo para reuniones de proyecto
     id: string;
     name: string;
   };
@@ -43,8 +43,8 @@ interface Meeting {
       email?: string;
     };
     isConnected?: boolean;
-    joinedAt?: string;        // When participant joined
-    leftAt?: string;          // When participant left
+    joinedAt?: string;        // Cuando el participante se unió
+    leftAt?: string;          // Cuando el participante se fue
   }>;
   
   createdAt: string;
@@ -53,48 +53,48 @@ interface Meeting {
 
 ---
 
-## 📊 Meeting Status System
+## 📊 Sistema de Estados de Reunión
 
-### Status Values & Meanings
+### Valores de Estado y Significados
 ```typescript
 type MeetingStatus = 'waiting' | 'active' | 'ended' | 'cancelled';
 ```
 
-**Status Definitions:**
-- **`waiting`**: Meeting is scheduled but hasn't started yet
-- **`active`**: Meeting is currently in progress (someone has joined)
-- **`ended`**: Meeting finished normally
-- **`cancelled`**: Meeting was cancelled before it could start
+**Definiciones de Estado:**
+- **`waiting`**: La reunión está programada pero aún no ha comenzado
+- **`active`**: La reunión está actualmente en progreso (alguien se ha unido)
+- **`ended`**: La reunión terminó normalmente
+- **`cancelled`**: La reunión fue cancelada antes de que pudiera comenzar
 
-### Status-Based UI Logic
+### Lógica de UI Basada en Estado
 ```javascript
 const getStatusInfo = (status) => {
   switch (status) {
     case 'active':
       return { 
         text: 'En curso', 
-        color: '#007AFF',     // Primary blue
+        color: '#007AFF',     // Azul primario
         icon: 'radio-button-on',
         canJoin: true 
       };
     case 'ended':
       return { 
         text: 'Finalizada', 
-        color: '#6B7280',     // Gray
+        color: '#6B7280',     // Gris
         icon: 'checkmark-circle',
         canJoin: false 
       };
     case 'cancelled':
       return { 
         text: 'Cancelada', 
-        color: '#FF3B30',     // Red
+        color: '#FF3B30',     // Rojo
         icon: 'close-circle',
         canJoin: false 
       };
     default: // 'waiting'
       return { 
         text: 'Programada', 
-        color: '#FFA500',     // Orange
+        color: '#FFA500',     // Naranja
         icon: 'time',
         canJoin: true 
       };
@@ -102,9 +102,9 @@ const getStatusInfo = (status) => {
 };
 ```
 
-### Visual Status Indicators
+### Indicadores Visuales de Estado
 ```css
-/* Status badges styling */
+/* Estilos de insignias de estado */
 .status-badge {
   display: flex;
   align-items: center;
@@ -138,10 +138,10 @@ const getStatusInfo = (status) => {
 
 ---
 
-## 🔄 Data Fetching Strategy
+## 🔄 Estrategia de Obtención de Datos
 
-### 1. Project Meetings
-For project-specific meetings, use the dedicated project endpoint:
+### 1. Reuniones de Proyecto
+Para reuniones específicas de proyecto, usar el endpoint dedicado del proyecto:
 
 ```javascript
 const fetchProjectMeetings = async (projectId) => {
@@ -155,33 +155,33 @@ const fetchProjectMeetings = async (projectId) => {
     });
     
     if (!response.ok) {
-      throw new Error('Failed to fetch project meetings');
+      throw new Error('Error al obtener reuniones del proyecto');
     }
     
     const meetings = await response.json();
     
-    // Log status breakdown for debugging
+    // Registrar desglose de estados para depuración
     const statusCounts = meetings.reduce((acc, meeting) => {
       acc[meeting.status || 'unknown'] = (acc[meeting.status || 'unknown'] || 0) + 1;
       return acc;
     }, {});
-    console.log('📊 Project meeting status breakdown:', statusCounts);
+    console.log('📊 Desglose de estados de reuniones del proyecto:', statusCounts);
     
     return meetings;
   } catch (error) {
-    console.error('Error fetching project meetings:', error);
+    console.error('Error al obtener reuniones del proyecto:', error);
     throw error;
   }
 };
 ```
 
-### 2. Personal Meetings
-For personal/general view, combine upcoming and history:
+### 2. Reuniones Personales
+Para vista personal/general, combinar próximas e historial:
 
 ```javascript
 const fetchPersonalMeetings = async () => {
   try {
-    // Fetch upcoming meetings
+    // Obtener reuniones próximas
     const upcomingResponse = await fetch(`${API_BASE_URL}/calls/meetings/my`, {
       method: 'GET',
       headers: {
@@ -191,12 +191,12 @@ const fetchPersonalMeetings = async () => {
     });
     
     if (!upcomingResponse.ok) {
-      throw new Error('Failed to fetch upcoming meetings');
+      throw new Error('Error al obtener reuniones próximas');
     }
     
     const upcomingMeetings = await upcomingResponse.json();
     
-    // Fetch history (with pagination)
+    // Obtener historial (con paginación)
     let historyMeetings = [];
     try {
       const historyParams = new URLSearchParams({
@@ -216,10 +216,10 @@ const fetchPersonalMeetings = async () => {
         historyMeetings = await historyResponse.json();
       }
     } catch (historyError) {
-      console.log('History endpoint not available, using only upcoming meetings');
+      console.log('Endpoint de historial no disponible, usando solo reuniones próximas');
     }
     
-    // Combine and deduplicate
+    // Combinar y desduplicar
     const allMeetings = [...upcomingMeetings];
     historyMeetings.forEach(historyMeeting => {
       const existsInUpcoming = upcomingMeetings.some(upcoming => upcoming.id === historyMeeting.id);
@@ -230,7 +230,7 @@ const fetchPersonalMeetings = async () => {
     
     return allMeetings;
   } catch (error) {
-    console.error('Error fetching personal meetings:', error);
+    console.error('Error al obtener reuniones personales:', error);
     throw error;
   }
 };
@@ -238,9 +238,9 @@ const fetchPersonalMeetings = async () => {
 
 ---
 
-## 📅 Past vs Future Meeting Classification
+## 📅 Clasificación de Reuniones Pasadas vs Futuras
 
-### Automatic Classification Logic
+### Lógica de Clasificación Automática
 ```javascript
 const classifyMeetings = (meetings) => {
   const now = new Date();
@@ -249,18 +249,18 @@ const classifyMeetings = (meetings) => {
     const scheduledDate = new Date(meeting.scheduledAt);
     const meetingEndTime = new Date(scheduledDate.getTime() + (meeting.duration * 60000));
     
-    // Classification logic
+    // Lógica de clasificación
     if (meeting.status === 'ended' || meeting.status === 'cancelled') {
       acc.past.push(meeting);
     } else if (meeting.status === 'active') {
       acc.current.push(meeting);
     } else if (scheduledDate <= now && meetingEndTime >= now) {
-      // Meeting should be active but might not be started yet
+      // La reunión debería estar activa pero podría no haber comenzado aún
       acc.current.push(meeting);
     } else if (scheduledDate > now) {
       acc.upcoming.push(meeting);
     } else {
-      // Meeting time has passed but status is still 'waiting'
+      // El tiempo de la reunión ha pasado pero el estado sigue siendo 'waiting'
       acc.past.push(meeting);
     }
     
@@ -269,7 +269,7 @@ const classifyMeetings = (meetings) => {
 };
 ```
 
-### Time-based Status Checks
+### Verificaciones de Estado Basadas en Tiempo
 ```javascript
 const getMeetingTimeStatus = (meeting) => {
   const now = new Date();
@@ -278,20 +278,20 @@ const getMeetingTimeStatus = (meeting) => {
   const fiveMinutesBefore = new Date(scheduledDate.getTime() - (5 * 60000));
   
   if (now < fiveMinutesBefore) {
-    return 'not-ready';      // Too early to join
+    return 'not-ready';      // Muy temprano para unirse
   } else if (now >= fiveMinutesBefore && now <= meetingEndTime) {
-    return 'can-join';       // Can join the meeting
+    return 'can-join';       // Puede unirse a la reunión
   } else {
-    return 'time-passed';    // Meeting time has passed
+    return 'time-passed';    // El tiempo de la reunión ha pasado
   }
 };
 ```
 
 ---
 
-## 🎨 UI Display Logic
+## 🎨 Lógica de Visualización de UI
 
-### Meeting Card Rendering
+### Renderizado de Tarjeta de Reunión
 ```javascript
 const renderMeetingCard = (meeting) => {
   const statusInfo = getStatusInfo(meeting.status);
@@ -305,7 +305,7 @@ const renderMeetingCard = (meeting) => {
   
   return (
     <div className="meeting-card" style={{ opacity: cardOpacity }}>
-      {/* Header with status */}
+      {/* Encabezado con estado */}
       <div className="meeting-header">
         <div className={`status-badge status-${meeting.status}`}>
           <Icon name={statusInfo.icon} />
@@ -317,13 +317,13 @@ const renderMeetingCard = (meeting) => {
         </div>
       </div>
       
-      {/* Meeting details */}
+      {/* Detalles de la reunión */}
       <h3 className="meeting-title">{meeting.title}</h3>
       {meeting.description && (
         <p className="meeting-description">{meeting.description}</p>
       )}
       
-      {/* Date and time */}
+      {/* Fecha y hora */}
       <div className="meeting-datetime">
         <div className="scheduled-time">
           <Icon name="calendar" />
@@ -332,7 +332,7 @@ const renderMeetingCard = (meeting) => {
           <span>({meeting.duration} min)</span>
         </div>
         
-        {/* Actual times for ended meetings */}
+        {/* Tiempos reales para reuniones terminadas */}
         {meeting.status === 'ended' && meeting.startedAt && meeting.endedAt && (
           <div className="actual-times">
             <div className="actual-time">
@@ -347,7 +347,7 @@ const renderMeetingCard = (meeting) => {
         )}
       </div>
       
-      {/* Organizer */}
+      {/* Organizador */}
       <div className="meeting-organizer">
         <div className="organizer-avatar">
           {meeting.initiator.nombre.charAt(0)}{meeting.initiator.apellidos.charAt(0)}
@@ -355,7 +355,7 @@ const renderMeetingCard = (meeting) => {
         <span>{meeting.initiator.nombre} {meeting.initiator.apellidos}</span>
       </div>
       
-      {/* Action buttons */}
+      {/* Botones de acción */}
       <div className="meeting-actions">
         {canJoin && (
           <button 
@@ -379,17 +379,17 @@ const renderMeetingCard = (meeting) => {
 };
 ```
 
-### List Filtering and Sorting
+### Filtrado y Ordenamiento de Lista
 ```javascript
 const filterAndSortMeetings = (meetings, filters) => {
   return meetings
     .filter(meeting => {
-      // Status filter
+      // Filtro de estado
       if (filters.status && filters.status !== 'all') {
         if (filters.status !== meeting.status) return false;
       }
       
-      // Time filter (past, today, upcoming)
+      // Filtro de tiempo (pasado, hoy, próximo)
       if (filters.timeRange) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -408,7 +408,7 @@ const filterAndSortMeetings = (meetings, filters) => {
         }
       }
       
-      // Search filter
+      // Filtro de búsqueda
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         return meeting.title.toLowerCase().includes(searchLower) ||
@@ -420,14 +420,14 @@ const filterAndSortMeetings = (meetings, filters) => {
       return true;
     })
     .sort((a, b) => {
-      // Sort by scheduled date (newest first for past, earliest first for upcoming)
+      // Ordenar por fecha programada (más reciente primero para pasadas, más temprano primero para próximas)
       const dateA = new Date(a.scheduledAt);
       const dateB = new Date(b.scheduledAt);
       
       if (filters.timeRange === 'past') {
-        return dateB.getTime() - dateA.getTime(); // Newest first
+        return dateB.getTime() - dateA.getTime(); // Más reciente primero
       } else {
-        return dateA.getTime() - dateB.getTime(); // Earliest first
+        return dateA.getTime() - dateB.getTime(); // Más temprano primero
       }
     });
 };
@@ -435,9 +435,9 @@ const filterAndSortMeetings = (meetings, filters) => {
 
 ---
 
-## 🚀 Meeting Actions
+## 🚀 Acciones de Reunión
 
-### 1. Creating Meetings
+### 1. Crear Reuniones
 ```javascript
 const createMeeting = async (meetingData) => {
   try {
@@ -445,13 +445,13 @@ const createMeeting = async (meetingData) => {
       ? `${API_BASE_URL}/calls/meetings/project`
       : `${API_BASE_URL}/calls/meetings/personal`;
     
-    // Transform frontend data to API format
+    // Transformar datos del frontend al formato de API
     const apiData = {
       title: meetingData.title,
       description: meetingData.description,
-      scheduledAt: meetingData.scheduledFor, // API expects 'scheduledAt'
+      scheduledAt: meetingData.scheduledFor, // API espera 'scheduledAt'
       duration: meetingData.duration,
-      audioOnly: !meetingData.isVideoCall,  // API uses audioOnly
+      audioOnly: !meetingData.isVideoCall,  // API usa audioOnly
       ...(meetingData.type === 'project' 
         ? { projectId: meetingData.projectId }
         : { participantEmails: meetingData.participantEmails }
@@ -469,18 +469,18 @@ const createMeeting = async (meetingData) => {
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to create meeting');
+      throw new Error(errorData.message || 'Error al crear reunión');
     }
     
     return await response.json();
   } catch (error) {
-    console.error('Error creating meeting:', error);
+    console.error('Error al crear reunión:', error);
     throw error;
   }
 };
 ```
 
-### 2. Joining Meetings
+### 2. Unirse a Reuniones
 ```javascript
 const joinMeeting = async (meetingId) => {
   try {
@@ -496,7 +496,7 @@ const joinMeeting = async (meetingId) => {
     if (!response.ok) {
       const errorData = await response.json();
       
-      // Handle specific error cases
+      // Manejar casos de error específicos
       if (errorData.message === 'call-has-ended') {
         throw new Error('Esta reunión ya ha terminado.');
       } else if (response.status === 404) {
@@ -508,20 +508,20 @@ const joinMeeting = async (meetingId) => {
     
     const { call, token: livekitToken } = await response.json();
     
-    // Navigate to call interface or setup LiveKit connection
+    // Navegar a interfaz de llamada o configurar conexión LiveKit
     return {
       callId: call.id,
       token: livekitToken,
       call: call
     };
   } catch (error) {
-    console.error('Error joining meeting:', error);
+    console.error('Error al unirse a la reunión:', error);
     throw error;
   }
 };
 ```
 
-### 3. Cancelling Meetings
+### 3. Cancelar Reuniones
 ```javascript
 const cancelMeeting = async (meetingId) => {
   try {
@@ -535,13 +535,13 @@ const cancelMeeting = async (meetingId) => {
     
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Failed to cancel meeting');
+      throw new Error(errorData.message || 'Error al cancelar reunión');
     }
     
-    // Meeting successfully cancelled - refresh the list
+    // Reunión cancelada exitosamente - actualizar la lista
     return true;
   } catch (error) {
-    console.error('Error cancelling meeting:', error);
+    console.error('Error al cancelar reunión:', error);
     throw error;
   }
 };
@@ -549,15 +549,15 @@ const cancelMeeting = async (meetingId) => {
 
 ---
 
-## 📊 Real-time Updates
+## 📊 Actualizaciones en Tiempo Real
 
-### WebSocket Integration
+### Integración WebSocket
 ```javascript
-// Listen for meeting status updates via WebSocket
+// Escuchar actualizaciones de estado de reunión vía WebSocket
 socket.on('meetingStatusUpdate', (data) => {
   const { meetingId, status, startedAt, endedAt } = data;
   
-  // Update the meeting in your local state
+  // Actualizar la reunión en tu estado local
   setMeetings(prevMeetings => 
     prevMeetings.map(meeting => 
       meeting.id === meetingId 
@@ -572,11 +572,11 @@ socket.on('meetingStatusUpdate', (data) => {
   );
 });
 
-// Listen for new meetings (when invited to others)
+// Escuchar nuevas reuniones (cuando se es invitado a otras)
 socket.on('newMeetingInvitation', (meeting) => {
   setMeetings(prevMeetings => [...prevMeetings, meeting]);
   
-  // Show notification
+  // Mostrar notificación
   showNotification({
     title: 'Nueva reunión programada',
     message: `${meeting.initiator.nombre} te ha invitado a: ${meeting.title}`,
@@ -587,9 +587,9 @@ socket.on('newMeetingInvitation', (meeting) => {
 
 ---
 
-## 🔧 Calendar Integration
+## 🔧 Integración de Calendario
 
-### Calendar Event Conversion
+### Conversión de Eventos de Calendario
 ```javascript
 const convertMeetingsToCalendarEvents = (meetings) => {
   return meetings.map(meeting => ({
@@ -613,7 +613,7 @@ const convertMeetingsToCalendarEvents = (meetings) => {
 };
 ```
 
-### Date Navigation & Filtering
+### Navegación y Filtrado de Fechas
 ```javascript
 const getMeetingsForDateRange = (meetings, startDate, endDate) => {
   return meetings.filter(meeting => {
@@ -631,30 +631,30 @@ const getMeetingsForMonth = (meetings, year, month) => {
 
 ---
 
-## 🎯 Key Implementation Points
+## 🎯 Puntos Clave de Implementación
 
-### 1. Data Refresh Strategy
-- **Auto-refresh**: Refresh meetings list when returning to the screen
-- **Manual refresh**: Pull-to-refresh functionality
-- **Real-time updates**: WebSocket listeners for status changes
-- **Cache invalidation**: Clear cache when meetings are created/cancelled
+### 1. Estrategia de Actualización de Datos
+- **Auto-actualización**: Actualizar lista de reuniones al regresar a la pantalla
+- **Actualización manual**: Funcionalidad de deslizar para actualizar
+- **Actualizaciones en tiempo real**: Listeners WebSocket para cambios de estado
+- **Invalidación de caché**: Limpiar caché cuando se crean/cancelan reuniones
 
-### 2. Error Handling
-- **Network errors**: Show appropriate error messages
-- **API errors**: Handle specific error codes (404, 400, etc.)
-- **Graceful degradation**: Show cached data when possible
-- **User feedback**: Clear loading states and error notifications
+### 2. Manejo de Errores
+- **Errores de red**: Mostrar mensajes de error apropiados
+- **Errores de API**: Manejar códigos de error específicos (404, 400, etc.)
+- **Degradación elegante**: Mostrar datos cacheados cuando sea posible
+- **Retroalimentación del usuario**: Estados de carga claros y notificaciones de error
 
-### 3. Performance Optimization
-- **Pagination**: Load meetings in batches for history
-- **Lazy loading**: Load meeting details on demand
-- **Memoization**: Cache computed status and display data
-- **Debounced search**: Avoid excessive API calls during search
+### 3. Optimización de Rendimiento
+- **Paginación**: Cargar reuniones en lotes para historial
+- **Carga perezosa**: Cargar detalles de reunión bajo demanda
+- **Memoización**: Cachear datos de estado y visualización computados
+- **Búsqueda con debounce**: Evitar llamadas excesivas a la API durante búsqueda
 
-### 4. Status Management Best Practices
-- **Client-side validation**: Check time ranges before showing join buttons
-- **Status synchronization**: Keep local status in sync with server
-- **Visual feedback**: Clear status indicators and loading states
-- **Error recovery**: Handle temporary network issues gracefully
+### 4. Mejores Prácticas de Gestión de Estado
+- **Validación del lado del cliente**: Verificar rangos de tiempo antes de mostrar botones de unirse
+- **Sincronización de estado**: Mantener estado local sincronizado con servidor
+- **Retroalimentación visual**: Indicadores de estado claros y estados de carga
+- **Recuperación de errores**: Manejar problemas temporales de red elegantemente
 
-The system provides comprehensive meeting management with proper status handling, efficient data fetching, and clear separation between past and future meetings, making it ideal for web frontend implementation. 
+El sistema proporciona gestión integral de reuniones con manejo apropiado de estados, obtención eficiente de datos y separación clara entre reuniones pasadas y futuras, haciéndolo ideal para implementación de frontend web. 

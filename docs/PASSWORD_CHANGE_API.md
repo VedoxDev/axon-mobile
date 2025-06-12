@@ -1,20 +1,20 @@
-# Password Change API Documentation
+# Documentación de API de Cambio de Contraseña
 
-## Overview
+## Resumen
 
-This endpoint allows authenticated users to change their password securely. It requires the current password for verification and enforces the same password strength requirements as registration.
+Este endpoint permite a los usuarios autenticados cambiar su contraseña de forma segura. Requiere la contraseña actual para verificación y aplica los mismos requisitos de seguridad que el registro.
 
 ## Endpoint
 
-### Change Password
+### Cambiar Contraseña
 
 **URL:** `PUT /auth/change-password`
 
-**Authentication:** Required (JWT Bearer Token)
+**Autenticación:** Requerida (JWT Bearer Token)
 
 **Content-Type:** `application/json`
 
-#### Request Body
+#### Cuerpo de la Solicitud
 
 ```json
 {
@@ -24,37 +24,37 @@ This endpoint allows authenticated users to change their password securely. It r
 }
 ```
 
-#### Field Requirements
+#### Requisitos de Campos
 
-| Field | Type | Required | Description |
+| Campo | Tipo | Requerido | Descripción |
 |-------|------|----------|-------------|
-| `currentPassword` | string | Yes | User's current password for verification |
-| `newPassword` | string | Yes | New password meeting security requirements |
-| `confirmPassword` | string | Yes | Confirmation of new password (must match newPassword) |
+| `currentPassword` | string | Sí | Contraseña actual del usuario para verificación |
+| `newPassword` | string | Sí | Nueva contraseña que cumple con los requisitos de seguridad |
+| `confirmPassword` | string | Sí | Confirmación de la nueva contraseña (debe coincidir con newPassword) |
 
-#### Password Requirements
+#### Requisitos de Contraseña
 
-The `newPassword` must meet the following criteria:
+La `newPassword` debe cumplir con los siguientes criterios:
 
-- **Minimum Length:** 8 characters
-- **Maximum Length:** 64 characters
-- **Uppercase Letter:** At least one uppercase letter (A-Z)
-- **Number:** At least one digit (0-9)
-- **Special Character:** At least one symbol (@$!%*?&.)
-- **Allowed Characters:** Only letters (including ñÑ), numbers, and symbols (@$!%*?&.)
+- **Longitud Mínima:** 8 caracteres
+- **Longitud Máxima:** 64 caracteres
+- **Letra Mayúscula:** Al menos una letra mayúscula (A-Z)
+- **Número:** Al menos un dígito (0-9)
+- **Carácter Especial:** Al menos un símbolo (@$!%*?&.)
+- **Caracteres Permitidos:** Solo letras (incluyendo ñÑ), números y símbolos (@$!%*?&.)
 
-#### Security Validations
+#### Validaciones de Seguridad
 
-1. **Current Password Verification:** The provided current password must match the stored password
-2. **Password Confirmation:** New password and confirm password must match exactly
-3. **Password Uniqueness:** New password must be different from the current password
-4. **Strength Requirements:** New password must meet all complexity requirements
+1. **Verificación de Contraseña Actual:** La contraseña actual proporcionada debe coincidir con la contraseña almacenada
+2. **Confirmación de Contraseña:** La nueva contraseña y la confirmación de contraseña deben coincidir exactamente
+3. **Unicidad de Contraseña:** La nueva contraseña debe ser diferente de la contraseña actual
+4. **Requisitos de Seguridad:** La nueva contraseña debe cumplir con todos los requisitos de complejidad
 
-## Response Format
+## Formato de Respuesta
 
-### Success Response
+### Respuesta Exitosa
 
-**Status Code:** `200 OK`
+**Código de Estado:** `200 OK`
 
 ```json
 {
@@ -62,11 +62,11 @@ The `newPassword` must meet the following criteria:
 }
 ```
 
-### Error Responses
+### Respuestas de Error
 
-#### Authentication Errors
+#### Errores de Autenticación
 
-**Status Code:** `401 Unauthorized`
+**Código de Estado:** `401 Unauthorized`
 
 ```json
 {
@@ -86,11 +86,11 @@ The `newPassword` must meet the following criteria:
 }
 ```
 
-#### Validation Errors
+#### Errores de Validación
 
-**Status Code:** `400 Bad Request`
+**Código de Estado:** `400 Bad Request`
 
-**Missing Required Fields:**
+**Campos Requeridos Faltantes:**
 ```json
 {
   "message": [
@@ -101,7 +101,7 @@ The `newPassword` must meet the following criteria:
 }
 ```
 
-**Password Strength Violations:**
+**Violaciones de Seguridad de Contraseña:**
 ```json
 {
   "message": [
@@ -112,7 +112,7 @@ The `newPassword` must meet the following criteria:
 }
 ```
 
-**Password Logic Errors:**
+**Errores de Lógica de Contraseña:**
 ```json
 {
   "message": "passwords-do-not-match"
@@ -125,22 +125,22 @@ The `newPassword` must meet the following criteria:
 }
 ```
 
-## Example Usage
+## Ejemplo de Uso
 
-### Using cURL
+### Usando cURL
 
 ```bash
 curl -X PUT http://localhost:3000/auth/change-password \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "currentPassword": "OldPass123!",
-    "newPassword": "NewSecure456@",
-    "confirmPassword": "NewSecure456@"
+    "currentPassword": "ContraseñaAntigua123!",
+    "newPassword": "NuevaSegura456@",
+    "confirmPassword": "NuevaSegura456@"
   }'
 ```
 
-### Using JavaScript (fetch)
+### Usando JavaScript (fetch)
 
 ```javascript
 const changePassword = async (currentPassword, newPassword, confirmPassword) => {
@@ -164,26 +164,26 @@ const changePassword = async (currentPassword, newPassword, confirmPassword) => 
     }
 
     const result = await response.json();
-    console.log('Password changed successfully:', result.message);
+    console.log('Contraseña cambiada exitosamente:', result.message);
     return result;
   } catch (error) {
-    console.error('Password change failed:', error.message);
+    console.error('Error al cambiar contraseña:', error.message);
     throw error;
   }
 };
 
-// Usage example
-changePassword('OldPass123!', 'NewSecure456@', 'NewSecure456@')
+// Ejemplo de uso
+changePassword('ContraseñaAntigua123!', 'NuevaSegura456@', 'NuevaSegura456@')
   .then(() => {
-    alert('Password changed successfully! Please log in again.');
-    // Redirect to login or refresh tokens
+    alert('¡Contraseña cambiada exitosamente! Por favor inicia sesión nuevamente.');
+    // Redirigir al login o refrescar tokens
   })
   .catch(error => {
-    alert('Failed to change password: ' + error.message);
+    alert('Error al cambiar contraseña: ' + error.message);
   });
 ```
 
-### Using Axios
+### Usando Axios
 
 ```javascript
 import axios from 'axios';
@@ -209,38 +209,38 @@ const changePassword = async (passwords) => {
 };
 ```
 
-## Frontend Integration Guidelines
+## Guías de Integración Frontend
 
-### Form Validation
+### Validación de Formulario
 
-Implement client-side validation to match the server requirements:
+Implementa validación del lado del cliente para coincidir con los requisitos del servidor:
 
 ```javascript
 const validatePassword = (password) => {
   const errors = [];
   
   if (password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
+    errors.push('La contraseña debe tener al menos 8 caracteres');
   }
   
   if (password.length > 64) {
-    errors.push('Password must be no more than 64 characters long');
+    errors.push('La contraseña no debe tener más de 64 caracteres');
   }
   
   if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
+    errors.push('La contraseña debe contener al menos una letra mayúscula');
   }
   
   if (!/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
+    errors.push('La contraseña debe contener al menos un número');
   }
   
   if (!/[@$!%*?&.]/.test(password)) {
-    errors.push('Password must contain at least one special character (@$!%*?&.)');
+    errors.push('La contraseña debe contener al menos un carácter especial (@$!%*?&.)');
   }
   
   if (!/^[A-Za-zñÑ\d@$!%*?&.]+$/.test(password)) {
-    errors.push('Password contains invalid characters');
+    errors.push('La contraseña contiene caracteres inválidos');
   }
   
   return errors;
@@ -250,76 +250,196 @@ const validatePasswordChange = (currentPassword, newPassword, confirmPassword) =
   const errors = [];
   
   if (!currentPassword) {
-    errors.push('Current password is required');
+    errors.push('La contraseña actual es requerida');
   }
   
   if (!newPassword) {
-    errors.push('New password is required');
-  } else {
-    errors.push(...validatePassword(newPassword));
+    errors.push('La nueva contraseña es requerida');
   }
   
   if (!confirmPassword) {
-    errors.push('Password confirmation is required');
+    errors.push('La confirmación de contraseña es requerida');
   }
   
   if (newPassword && confirmPassword && newPassword !== confirmPassword) {
-    errors.push('New password and confirmation do not match');
+    errors.push('Las contraseñas no coinciden');
   }
   
   if (currentPassword && newPassword && currentPassword === newPassword) {
-    errors.push('New password must be different from current password');
+    errors.push('La nueva contraseña debe ser diferente de la actual');
+  }
+  
+  if (newPassword) {
+    errors.push(...validatePassword(newPassword));
   }
   
   return errors;
 };
 ```
 
-### Security Best Practices
-
-1. **Clear Form Fields:** Clear all password fields after successful change
-2. **Session Management:** Consider forcing re-authentication after password change
-3. **User Feedback:** Provide clear feedback for both success and error cases
-4. **Rate Limiting:** Implement client-side delays between attempts
-5. **Password Strength Indicator:** Show real-time password strength feedback
-
-### Error Handling
+### Componente React de Ejemplo
 
 ```javascript
-const handlePasswordChangeError = (error) => {
-  if (typeof error === 'string') {
-    return error;
-  }
-  
-  if (Array.isArray(error)) {
-    return error.join(', ');
-  }
-  
-  // Map server error messages to user-friendly messages
-  const errorMap = {
-    'current-password-incorrect': 'Current password is incorrect',
-    'passwords-do-not-match': 'New password and confirmation do not match',
-    'new-password-must-be-different': 'New password must be different from current password',
-    'new-password-too-weak (needs uppercase, number, symbol)': 'Password must contain uppercase letter, number, and special character'
+import React, { useState } from 'react';
+
+const PasswordChangeForm = () => {
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [errors, setErrors] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Limpiar errores al cambiar
+    if (errors.length > 0) {
+      setErrors([]);
+    }
   };
-  
-  return errorMap[error] || error;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const validationErrors = validatePasswordChange(
+      formData.currentPassword,
+      formData.newPassword,
+      formData.confirmPassword
+    );
+    
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await changePassword(
+        formData.currentPassword,
+        formData.newPassword,
+        formData.confirmPassword
+      );
+      
+      alert('¡Contraseña cambiada exitosamente!');
+      setFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      setErrors([error.message]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div>
+        <label htmlFor="currentPassword">Contraseña Actual:</label>
+        <input
+          type="password"
+          id="currentPassword"
+          name="currentPassword"
+          value={formData.currentPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      <div>
+        <label htmlFor="newPassword">Nueva Contraseña:</label>
+        <input
+          type="password"
+          id="newPassword"
+          name="newPassword"
+          value={formData.newPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      <div>
+        <label htmlFor="confirmPassword">Confirmar Nueva Contraseña:</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          required
+        />
+      </div>
+      
+      {errors.length > 0 && (
+        <div style={{ color: 'red' }}>
+          {errors.map((error, index) => (
+            <p key={index}>{error}</p>
+          ))}
+        </div>
+      )}
+      
+      <button type="submit" disabled={isLoading}>
+        {isLoading ? 'Cambiando...' : 'Cambiar Contraseña'}
+      </button>
+    </form>
+  );
 };
+
+export default PasswordChangeForm;
 ```
 
-## Security Features
+## Consideraciones de Seguridad
 
-- **bcrypt Hashing:** Passwords are hashed using bcrypt with salt rounds of 10
-- **Current Password Verification:** Prevents unauthorized password changes
-- **Password Strength Enforcement:** Same requirements as registration
-- **Authentication Required:** Only authenticated users can change passwords
-- **Password Uniqueness:** Prevents reusing the current password
-- **Input Validation:** Comprehensive validation on both client and server side
+### Mejores Prácticas
 
-## Notes
+1. **Verificación de Contraseña Actual:** Siempre verifica la contraseña actual antes de permitir el cambio
+2. **Validación del Lado del Servidor:** Nunca confíes solo en la validación del cliente
+3. **Hashing Seguro:** Las contraseñas se almacenan usando bcrypt con salt
+4. **Prevención de Ataques de Fuerza Bruta:** Implementa limitación de intentos
+5. **Logs de Auditoría:** Registra todos los cambios de contraseña para auditoría
 
-- Password change does not invalidate existing JWT tokens
-- Consider implementing token refresh or forced re-authentication flow
-- The endpoint uses PUT method following RESTful conventions for updates
-- All password validations are performed server-side for security
-- Error messages are localized and can be easily translated 
+### Flujo de Seguridad
+
+1. Usuario proporciona contraseña actual
+2. Sistema verifica contraseña actual contra hash almacenado
+3. Sistema valida nueva contraseña contra requisitos de seguridad
+4. Sistema verifica que nueva contraseña sea diferente de la actual
+5. Sistema hashea nueva contraseña
+6. Sistema actualiza contraseña en base de datos
+7. Sistema registra evento de cambio de contraseña
+
+## Manejo de Errores Comunes
+
+### Errores de Usuario
+
+- **Contraseña actual incorrecta:** Verificar que el usuario recuerde su contraseña actual
+- **Contraseñas no coinciden:** Verificar que la confirmación sea exacta
+- **Contraseña muy débil:** Guiar al usuario con los requisitos específicos
+
+### Errores de Sistema
+
+- **Usuario no encontrado:** Verificar autenticación JWT
+- **Error de base de datos:** Reintentar la operación o notificar error del servidor
+
+## Consideraciones de UX
+
+### Retroalimentación Visual
+
+- Mostrar requisitos de contraseña en tiempo real
+- Usar indicadores de seguridad (débil/fuerte)
+- Confirmar éxito claramente
+- Proporcionar mensajes de error específicos
+
+### Accesibilidad
+
+- Asegurar que los campos tengan etiquetas apropiadas
+- Proporcionar texto alternativo para indicadores visuales
+- Soportar navegación por teclado
+- Incluir mensajes de error legibles por lectores de pantalla 

@@ -1,24 +1,24 @@
-# Video Calls API Documentation 📹
+# Documentación de API de Videollamadas 📹
 
-## Overview
-The Video Calls system supports both **1:1 direct calls** and **project group calls** with **LiveKit integration** for real-time video/audio communication.
+## Resumen
+El sistema de Videollamadas soporta tanto **llamadas directas 1:1** como **llamadas grupales de proyecto** con **integración de LiveKit** para comunicación de video/audio en tiempo real.
 
-## Features ✨
-- **1:1 Direct Calls** - Private video/audio calls between users
-- **Project Group Calls** - Multi-participant calls for project teams
-- **LiveKit Integration** - Professional video calling infrastructure
-- **Real-time Notifications** - Call invitations via chat system
-- **Call Management** - Start, join, leave, end calls
-- **Participant State** - Mute/unmute audio/video tracking
-- **Call History** - Track all calls and participants
-- **Audio-only Mode** - Option for voice-only calls
-- **Automatic Room Cleanup** - Rooms deleted when empty
+## Características ✨
+- **Llamadas Directas 1:1** - Llamadas privadas de video/audio entre usuarios
+- **Llamadas Grupales de Proyecto** - Llamadas de múltiples participantes para equipos de proyecto
+- **Integración LiveKit** - Infraestructura profesional de videollamadas
+- **Notificaciones en Tiempo Real** - Invitaciones de llamada vía sistema de chat
+- **Gestión de Llamadas** - Iniciar, unirse, salir, finalizar llamadas
+- **Estado del Participante** - Seguimiento de silenciar/activar audio/video
+- **Historial de Llamadas** - Rastrear todas las llamadas y participantes
+- **Modo Solo Audio** - Opción para llamadas solo de voz
+- **Limpieza Automática de Salas** - Salas eliminadas cuando están vacías
 
 ---
 
-## 🎯 Quick Start
+## 🎯 Inicio Rápido
 
-### 1. Start a Direct Call (1:1)
+### 1. Iniciar una Llamada Directa (1:1)
 ```http
 POST /calls/start
 Authorization: Bearer <jwt-token>
@@ -27,12 +27,12 @@ Content-Type: application/json
 {
   "type": "direct",
   "recipientId": "user-uuid-here",
-  "title": "Quick sync call",
+  "title": "Llamada de sincronización rápida",
   "audioOnly": false
 }
 ```
 
-**Response:**
+**Respuesta:**
 ```json
 {
   "call": {
@@ -40,35 +40,35 @@ Content-Type: application/json
     "roomName": "call_direct_1642680000000_abc123",
     "type": "direct",
     "status": "waiting",
-    "title": "Quick sync call",
+    "title": "Llamada de sincronización rápida",
     "audioOnly": false,
     "initiator": { "id": "user-uuid", "nombre": "Victor", "apellidos": "Fonseca" },
     "recipient": { "id": "recipient-uuid", "nombre": "John", "apellidos": "Doe" },
     "createdAt": "2024-01-10T10:00:00.000Z"
   },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // LiveKit access token
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // Token de acceso LiveKit
 }
 ```
 
-### 2. Join the Call
+### 2. Unirse a la Llamada
 ```http
 POST /calls/join/{callId}
 Authorization: Bearer <jwt-token>
 ```
 
-**Response:**
+**Respuesta:**
 ```json
 {
-  "call": { /* call details */ },
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // LiveKit access token
+  "call": { /* detalles de la llamada */ },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." // Token de acceso LiveKit
 }
 ```
 
 ---
 
-## 🎥 Call Management Endpoints
+## 🎥 Endpoints de Gestión de Llamadas
 
-### Start Project Call (1:many)
+### Iniciar Llamada de Proyecto (1:muchos)
 ```http
 POST /calls/start
 Authorization: Bearer <jwt-token>
@@ -76,13 +76,13 @@ Authorization: Bearer <jwt-token>
 {
   "type": "project",
   "projectId": "project-uuid",
-  "title": "Sprint planning meeting",
+  "title": "Reunión de planificación de sprint",
   "maxParticipants": 10,
   "audioOnly": false
 }
 ```
 
-### Join Existing Call
+### Unirse a Llamada Existente
 ```http
 POST /calls/join/{callId}
 Authorization: Bearer <jwt-token>
@@ -92,25 +92,25 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Leave Call
+### Salir de la Llamada
 ```http
 PUT /calls/leave/{callId}
 Authorization: Bearer <jwt-token>
 ```
 
-### End Call (Initiator Only)
+### Finalizar Llamada (Solo Iniciador)
 ```http
 DELETE /calls/end/{callId}
 Authorization: Bearer <jwt-token>
 ```
 
-### Get Active Calls
+### Obtener Llamadas Activas
 ```http
 GET /calls/active
 Authorization: Bearer <jwt-token>
 ```
 
-### Get Call History
+### Obtener Historial de Llamadas
 ```http
 GET /calls/history?page=1&limit=20
 Authorization: Bearer <jwt-token>
@@ -118,9 +118,9 @@ Authorization: Bearer <jwt-token>
 
 ---
 
-## 🎛️ Participant Management
+## 🎛️ Gestión de Participantes
 
-### Update Participant State
+### Actualizar Estado del Participante
 ```http
 PUT /calls/participant/{callId}
 Authorization: Bearer <jwt-token>
@@ -131,7 +131,7 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Generate New Token (if expired)
+### Generar Nuevo Token (si expiró)
 ```http
 POST /calls/token/{callId}
 Authorization: Bearer <jwt-token>
@@ -139,54 +139,54 @@ Authorization: Bearer <jwt-token>
 
 ---
 
-## 📱 React Native Integration
+## 📱 Integración React Native
 
-### 1. Install LiveKit Client
+### 1. Instalar Cliente LiveKit
 ```bash
 npm install @livekit/react-native @livekit/react-native-webrtc
 ```
 
-### 2. Participant Display Names 👥
-**NEW: Proper User Names in Video Calls!**
+### 2. Nombres de Visualización de Participantes 👥
+**NUEVO: ¡Nombres de Usuario Apropiados en Videollamadas!**
 
-The backend now includes user metadata in LiveKit tokens, allowing proper display names:
+El backend ahora incluye metadatos de usuario en tokens LiveKit, permitiendo nombres de visualización apropiados:
 
 ```javascript
-// Helper function to get participant display name
+// Función auxiliar para obtener nombre de visualización del participante
 const getParticipantDisplayName = (participant) => {
-  // Check if participant has metadata with displayName
+  // Verificar si el participante tiene metadatos con displayName
   if (participant.metadata) {
     try {
       const metadata = JSON.parse(participant.metadata);
       if (metadata.displayName) {
-        return metadata.displayName; // Returns "John Smith"
+        return metadata.displayName; // Retorna "John Smith"
       }
     } catch (error) {
-      console.log('Failed to parse participant metadata:', error);
+      console.log('Error al analizar metadatos del participante:', error);
     }
   }
   
-  // Fallback to participant name if available
+  // Alternativa al nombre del participante si está disponible
   if (participant.name && participant.name !== participant.identity) {
-    return participant.name; // Returns "John Smith"
+    return participant.name; // Retorna "John Smith"
   }
   
-  // Last resort: Use identity (UUID) with "User" prefix
-  return `User ${participant.identity.substring(0, 8)}`;
+  // Último recurso: Usar identidad (UUID) con prefijo "Usuario"
+  return `Usuario ${participant.identity.substring(0, 8)}`;
 };
 
-// Usage in your component
+// Uso en tu componente
 participants.map(participant => {
   const displayName = getParticipantDisplayName(participant);
   return (
     <Text key={participant.identity}>
-      {displayName} {/* Shows "John Smith" instead of UUID */}
+      {displayName} {/* Muestra "John Smith" en lugar de UUID */}
     </Text>
   );
 });
 ```
 
-### 3. Basic Call Component
+### 3. Componente de Llamada Básico
 ```javascript
 import React, { useEffect, useState } from 'react';
 import { View, Text, Button, Alert } from 'react-native';
@@ -197,7 +197,7 @@ const VideoCallScreen = ({ route, navigation }) => {
   const [room, setRoom] = useState(null);
   const [participants, setParticipants] = useState([]);
 
-  // Helper function to get display name (IMPROVED!)
+  // Función auxiliar para obtener nombre de visualización (¡MEJORADA!)
   const getParticipantDisplayName = (participant) => {
     if (participant.metadata) {
       try {
@@ -206,7 +206,7 @@ const VideoCallScreen = ({ route, navigation }) => {
           return metadata.displayName; // "John Smith"
         }
       } catch (error) {
-        console.log('Failed to parse participant metadata:', error);
+        console.log('Error al analizar metadatos del participante:', error);
       }
     }
     
@@ -214,7 +214,7 @@ const VideoCallScreen = ({ route, navigation }) => {
       return participant.name;
     }
     
-    return `User ${participant.identity.substring(0, 8)}`;
+    return `Usuario ${participant.identity.substring(0, 8)}`;
   };
 
   useEffect(() => {
@@ -228,7 +228,7 @@ const VideoCallScreen = ({ route, navigation }) => {
 
   const joinCall = async () => {
     try {
-      // Join call via API
+      // Unirse a llamada vía API
       const response = await fetch(`${API_BASE_URL}/calls/join/${callId}`, {
         method: 'POST',
         headers: {
@@ -239,9 +239,9 @@ const VideoCallScreen = ({ route, navigation }) => {
 
       const { call, token } = await response.json();
       
-      // Connect to LiveKit room
+      // Conectar a sala LiveKit
       const newRoom = await connect(
-        process.env.LIVEKIT_URL, // Your LiveKit server URL
+        process.env.LIVEKIT_URL, // URL de tu servidor LiveKit
         token,
         {
           audio: true,
@@ -252,23 +252,24 @@ const VideoCallScreen = ({ route, navigation }) => {
 
       setRoom(newRoom);
 
-      // Listen for participants (IMPROVED LOGGING!)
+      // Eventos de la sala
       newRoom.on(RoomEvent.ParticipantConnected, (participant) => {
-        const displayName = getParticipantDisplayName(participant);
-        console.log(`${displayName} joined the call`); // "John Smith joined the call"
+        console.log('Participante conectado:', getParticipantDisplayName(participant));
         setParticipants(prev => [...prev, participant]);
       });
 
       newRoom.on(RoomEvent.ParticipantDisconnected, (participant) => {
-        const displayName = getParticipantDisplayName(participant);
-        console.log(`${displayName} left the call`); // "John Smith left the call"
+        console.log('Participante desconectado:', getParticipantDisplayName(participant));
         setParticipants(prev => prev.filter(p => p.identity !== participant.identity));
       });
 
+      // Obtener participantes existentes
+      const existingParticipants = Array.from(newRoom.participants.values());
+      setParticipants(existingParticipants);
+
     } catch (error) {
-      console.error('Failed to join call:', error);
-      Alert.alert('Error', 'Failed to join call');
-      navigation.goBack();
+      console.error('Error al unirse a la llamada:', error);
+      Alert.alert('Error', 'No se pudo unir a la llamada');
     }
   };
 
@@ -276,9 +277,10 @@ const VideoCallScreen = ({ route, navigation }) => {
     try {
       if (room) {
         room.disconnect();
+        setRoom(null);
       }
 
-      // Notify backend
+      // Notificar al servidor
       await fetch(`${API_BASE_URL}/calls/leave/${callId}`, {
         method: 'PUT',
         headers: {
@@ -288,74 +290,41 @@ const VideoCallScreen = ({ route, navigation }) => {
 
       navigation.goBack();
     } catch (error) {
-      console.error('Failed to leave call:', error);
-    }
-  };
-
-  const toggleMute = async () => {
-    if (room) {
-      const enabled = room.localParticipant.isMicrophoneEnabled;
-      room.localParticipant.setMicrophoneEnabled(!enabled);
-      
-      // Update backend state
-      await fetch(`${API_BASE_URL}/calls/participant/${callId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${await getToken()}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ micMuted: enabled })
-      });
-    }
-  };
-
-  const toggleCamera = async () => {
-    if (room) {
-      const enabled = room.localParticipant.isCameraEnabled;
-      room.localParticipant.setCameraEnabled(!enabled);
-      
-      // Update backend state
-      await fetch(`${API_BASE_URL}/calls/participant/${callId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${await getToken()}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ videoMuted: enabled })
-      });
+      console.error('Error al salir de la llamada:', error);
+      navigation.goBack(); // Volver de todos modos
     }
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000' }}>
-      {/* Video views would go here */}
-      <Text style={{ color: 'white', textAlign: 'center', marginTop: 50 }}>
-        In call with {participants.length} participants
+      <Text style={{ color: 'white', textAlign: 'center', padding: 20 }}>
+        Llamada en Progreso
       </Text>
       
-      {/* Display participant names (IMPROVED!) */}
-      <View style={{ marginTop: 20 }}>
-        {participants.map(participant => {
-          const displayName = getParticipantDisplayName(participant);
-          return (
-            <Text key={participant.identity} style={{ color: 'white', textAlign: 'center' }}>
-              📹 {displayName} {/* Shows "📹 John Smith" instead of UUID */}
-            </Text>
-          );
-        })}
+      {/* Lista de participantes */}
+      <View style={{ flex: 1 }}>
+        {participants.map(participant => (
+          <Text key={participant.identity} style={{ color: 'white', padding: 10 }}>
+            {getParticipantDisplayName(participant)}
+          </Text>
+        ))}
       </View>
-      
-      <View style={{ 
-        position: 'absolute', 
-        bottom: 50, 
-        left: 0, 
-        right: 0, 
-        flexDirection: 'row', 
-        justifyContent: 'space-around' 
-      }}>
-        <Button title="Mute" onPress={toggleMute} />
-        <Button title="Camera" onPress={toggleCamera} />
-        <Button title="Leave" onPress={leaveCall} color="red" />
+
+      {/* Controles de llamada */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', padding: 20 }}>
+        <Button
+          title="Silenciar"
+          onPress={() => {
+            if (room?.localParticipant) {
+              room.localParticipant.setMicrophoneEnabled(false);
+            }
+          }}
+        />
+        <Button
+          title="Colgar"
+          color="red"
+          onPress={leaveCall}
+        />
       </View>
     </View>
   );
@@ -364,414 +333,519 @@ const VideoCallScreen = ({ route, navigation }) => {
 export default VideoCallScreen;
 ```
 
-### 4. Start Call Function
+### 4. Servicio de Llamadas
 ```javascript
-const startVideoCall = async (recipientId, type = 'direct') => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/calls/start`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${await getToken()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        type,
-        recipientId: type === 'direct' ? recipientId : undefined,
-        projectId: type === 'project' ? recipientId : undefined,
-        title: type === 'direct' ? 'Video call' : 'Project meeting'
-      })
-    });
-
-    const { call } = await response.json();
-    
-    // Navigate to call screen
-    navigation.navigate('VideoCall', { callId: call.id });
-    
-  } catch (error) {
-    console.error('Failed to start call:', error);
-    Alert.alert('Error', 'Failed to start call');
+class CallService {
+  constructor() {
+    this.baseURL = process.env.API_BASE_URL;
   }
-};
+
+  async startDirectCall(recipientId, title = 'Llamada Directa', audioOnly = false) {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/start`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'direct',
+          recipientId,
+          title,
+          audioOnly
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al iniciar llamada');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error iniciando llamada directa:', error);
+      throw error;
+    }
+  }
+
+  async startProjectCall(projectId, title, maxParticipants = 10, audioOnly = false) {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/start`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'project',
+          projectId,
+          title,
+          maxParticipants,
+          audioOnly
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al iniciar llamada de proyecto');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error iniciando llamada de proyecto:', error);
+      throw error;
+    }
+  }
+
+  async joinCall(callId, audioOnly = false) {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/join/${callId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ audioOnly })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al unirse a la llamada');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error uniéndose a la llamada:', error);
+      throw error;
+    }
+  }
+
+  async leaveCall(callId) {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/leave/${callId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al salir de la llamada');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error saliendo de la llamada:', error);
+      throw error;
+    }
+  }
+
+  async endCall(callId) {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/end/${callId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al finalizar llamada');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error finalizando llamada:', error);
+      throw error;
+    }
+  }
+
+  async getActiveCalls() {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/active`, {
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al obtener llamadas activas');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error obteniendo llamadas activas:', error);
+      throw error;
+    }
+  }
+
+  async getCallHistory(page = 1, limit = 20) {
+    try {
+      const response = await fetch(`${this.baseURL}/calls/history?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${await this.getToken()}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al obtener historial de llamadas');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error obteniendo historial de llamadas:', error);
+      throw error;
+    }
+  }
+
+  async getToken() {
+    // Implementar según tu método de almacenamiento de tokens
+    return await AsyncStorage.getItem('access_token');
+  }
+}
+
+export default new CallService();
 ```
 
 ---
 
-## 👤 Participant Metadata Structure
+## ❌ Respuestas de Error
 
-**NEW: Rich User Data in LiveKit Tokens!**
-
-The backend now includes comprehensive user information in LiveKit token metadata:
-
+### 400 Bad Request
 ```json
 {
-  "displayName": "John Smith",
-  "email": "john.smith@company.com", 
-  "avatar": "",
-  "userId": "357b292d-ddbf-4061-89ce-2243f6d9db57"
+  "statusCode": 400,
+  "message": ["type-required", "recipient-or-project-required"],
+  "error": "Bad Request"
 }
 ```
 
-### Accessing Metadata in Frontend
-```javascript
-// Parse participant metadata
-const parseParticipantMetadata = (participant) => {
-  if (!participant.metadata) return null;
-  
-  try {
-    return JSON.parse(participant.metadata);
-  } catch (error) {
-    console.error('Failed to parse metadata:', error);
-    return null;
-  }
-};
-
-// Usage example
-const metadata = parseParticipantMetadata(participant);
-if (metadata) {
-  console.log('Display Name:', metadata.displayName); // "John Smith"
-  console.log('Email:', metadata.email);              // "john.smith@company.com"  
-  console.log('User ID:', metadata.userId);           // "357b292d-..."
+### 401 Unauthorized
+```json
+{
+  "statusCode": 401,
+  "message": "Unauthorized"
 }
 ```
 
-### Benefits
-- ✅ **Real Names**: Show "John Smith" instead of "User 357b292d"
-- ✅ **Email Access**: Optional user email for contact info
-- ✅ **UUID Tracking**: Backend can still track users by UUID
-- ✅ **Future Extensible**: Easy to add avatar URLs, roles, etc.
-- ✅ **Fallback Safe**: Works even if metadata parsing fails
+### 403 Forbidden
+```json
+{
+  "statusCode": 403,
+  "message": "insufficient-permissions"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "statusCode": 404,
+  "message": "call-not-found"
+}
+```
+
+### 409 Conflict
+```json
+{
+  "statusCode": 409,
+  "message": "user-already-in-call"
+}
+```
 
 ---
 
-## 🔔 Chat Integration
+## 🎯 Casos de Uso Comunes
 
-### Call Invitations ✨
-**NEW: Automatic messages distinguish between audio and video calls!**
-
-When a call is started, automatic chat messages are sent:
-
-**Direct Calls:**
-```
-📞 Victor Fonseca ha iniciado una llamada       (audio-only)
-📞 Victor Fonseca ha iniciado una videollamada  (video call)
-```
-
-**Project Calls:**
-```
-📞 Victor Fonseca ha iniciado una llamada de audio  (audio-only)
-📞 Victor Fonseca ha iniciado una videollamada      (video call)
-```
-
-The backend automatically checks the `audioOnly` parameter and generates appropriate messages in Spanish.
-
-**Frontend Display Logic (Improved):**
-- **Direct audio calls**: "Has iniciado una llamada" / "{name} ha iniciado una llamada"
-- **Direct video calls**: "Has iniciado una videollamada" / "{name} ha iniciado una videollamada"  
-- **Project audio calls**: "Has iniciado una llamada de audio" / "{name} ha iniciado una llamada de audio"
-- **Project video calls**: "Has iniciado una videollamada" / "{name} ha iniciado una videollamada"
-
-**Visual Improvements:**
-- ✅ **Correct Icons**: 📞 for audio calls, 📹 for video calls
-- ✅ **Context-Aware Text**: Different messages for direct vs project calls
-- ✅ **Consistent Spanish**: All UI text properly localized
-- ✅ **Call Status Indicators**: Shows "Activa", "Finalizada", "Cancelada"
-
-### Listen for Call Invitations
+### 1. Gestión de Invitaciones de Llamada
 ```javascript
-// In your chat WebSocket handler
-socket.on('newMessage', (message) => {
-  if (message.content.includes('📞')) {
-    // This is a call invitation
-    showCallInvitationDialog(message);
+class CallInvitationManager {
+  constructor() {
+    this.pendingInvitations = new Map();
   }
-});
 
-const showCallInvitationDialog = (message) => {
-  Alert.alert(
-    'Call Invitation',
-    message.content,
-    [
-      { text: 'Decline', style: 'cancel' },
-      { 
-        text: 'Join', 
-        onPress: () => {
-          // Extract call ID from message and join
-          navigation.navigate('VideoCall', { callId: extractCallId(message) });
+  async sendCallInvitation(recipientId, callData) {
+    try {
+      // Iniciar llamada
+      const { call, token } = await CallService.startDirectCall(
+        recipientId, 
+        callData.title, 
+        callData.audioOnly
+      );
+
+      // Almacenar invitación pendiente
+      this.pendingInvitations.set(call.id, {
+        ...call,
+        token,
+        timestamp: Date.now()
+      });
+
+      // Mostrar interfaz de llamada saliente
+      this.showOutgoingCallUI(call);
+
+      return call;
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo iniciar la llamada');
+      throw error;
+    }
+  }
+
+  handleIncomingCall(callData) {
+    // Mostrar interfaz de llamada entrante
+    Alert.alert(
+      'Llamada Entrante',
+      `${callData.initiator.nombre} ${callData.initiator.apellidos} te está llamando`,
+      [
+        {
+          text: 'Rechazar',
+          style: 'cancel',
+          onPress: () => this.rejectCall(callData.id)
+        },
+        {
+          text: 'Aceptar',
+          onPress: () => this.acceptCall(callData.id)
         }
+      ]
+    );
+  }
+
+  async acceptCall(callId) {
+    try {
+      const { call, token } = await CallService.joinCall(callId);
+      
+      // Navegar a pantalla de videollamada
+      this.navigateToCallScreen(call, token);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo unir a la llamada');
+    }
+  }
+
+  async rejectCall(callId) {
+    try {
+      await CallService.leaveCall(callId);
+    } catch (error) {
+      console.error('Error rechazando llamada:', error);
+    }
+  }
+
+  showOutgoingCallUI(call) {
+    // Implementar UI de llamada saliente
+    // Mostrar avatar del destinatario, nombre, etc.
+  }
+
+  navigateToCallScreen(call, token) {
+    // Navegar a la pantalla de videollamada
+    // navigation.navigate('VideoCall', { call, token });
+  }
+}
+```
+
+### 2. Detector de Llamadas Entrantes
+```javascript
+import { useEffect } from 'react';
+import messaging from '@react-native-firebase/messaging';
+
+const CallNotificationHandler = () => {
+  useEffect(() => {
+    // Manejar notificaciones de llamada cuando la app está en primer plano
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      if (remoteMessage.data?.type === 'call_invitation') {
+        const callData = JSON.parse(remoteMessage.data.callData);
+        
+        // Manejar llamada entrante
+        CallInvitationManager.handleIncomingCall(callData);
       }
-    ]
-  );
+    });
+
+    // Manejar notificación tocada (app en background)
+    messaging().onNotificationOpenedApp(remoteMessage => {
+      if (remoteMessage.data?.type === 'call_invitation') {
+        const callData = JSON.parse(remoteMessage.data.callData);
+        
+        // Verificar si la llamada aún está activa
+        CallService.joinCall(callData.id)
+          .then(({ call, token }) => {
+            // Navegar a pantalla de llamada
+          })
+          .catch(error => {
+            Alert.alert('Llamada Terminada', 'Esta llamada ya no está disponible');
+          });
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  return null; // Componente sin UI
+};
+
+export default CallNotificationHandler;
+```
+
+### 3. Monitoreo de Estado de Llamada
+```javascript
+class CallStateManager {
+  constructor() {
+    this.currentCall = null;
+    this.callState = 'idle'; // idle, outgoing, incoming, connected
+    this.participants = [];
+  }
+
+  setCallState(state) {
+    this.callState = state;
+    this.notifyStateChange(state);
+  }
+
+  async startCall(type, target, options = {}) {
+    this.setCallState('outgoing');
+    
+    try {
+      let result;
+      if (type === 'direct') {
+        result = await CallService.startDirectCall(target, options.title, options.audioOnly);
+      } else {
+        result = await CallService.startProjectCall(target, options.title, options.maxParticipants, options.audioOnly);
+      }
+      
+      this.currentCall = result.call;
+      return result;
+    } catch (error) {
+      this.setCallState('idle');
+      throw error;
+    }
+  }
+
+  async answerCall(callId) {
+    this.setCallState('connecting');
+    
+    try {
+      const result = await CallService.joinCall(callId);
+      this.currentCall = result.call;
+      this.setCallState('connected');
+      return result;
+    } catch (error) {
+      this.setCallState('idle');
+      throw error;
+    }
+  }
+
+  async endCall() {
+    if (!this.currentCall) return;
+    
+    try {
+      await CallService.endCall(this.currentCall.id);
+    } catch (error) {
+      console.error('Error terminando llamada:', error);
+    } finally {
+      this.currentCall = null;
+      this.participants = [];
+      this.setCallState('idle');
+    }
+  }
+
+  notifyStateChange(state) {
+    // Notificar cambios de estado a componentes suscritos
+    // Implementar patrón observer o usar context/redux
+    console.log('Estado de llamada cambió a:', state);
+  }
+
+  getCurrentCall() {
+    return this.currentCall;
+  }
+
+  getCallState() {
+    return this.callState;
+  }
+}
+
+export default new CallStateManager();
+```
+
+---
+
+## 🔐 Consideraciones de Seguridad
+
+### Tokens LiveKit
+- Los tokens tienen una validez limitada (por defecto 1 hora)
+- Los tokens se generan con permisos específicos (audio, video, participante)
+- Use el endpoint `/calls/token/{callId}` para renovar tokens expirados
+
+### Validación de Permisos
+- Solo miembros del proyecto pueden unirse a llamadas de proyecto
+- Las llamadas directas requieren que ambos usuarios se conozcan
+- Los iniciadores pueden finalizar sus propias llamadas
+
+### Configuración LiveKit
+```javascript
+// Configuración recomendada para LiveKit
+const roomOptions = {
+  audio: true,
+  video: true,
+  adaptiveStream: true, // Adapta calidad según ancho de banda
+  dynacast: true,       // Optimiza streams para múltiples participantes
+  videoCaptureDefaults: {
+    resolution: VideoPresets.h720.resolution,
+    frameRate: 15
+  },
+  audioCaptureDefaults: {
+    autoGainControl: true,
+    echoCancellation: true,
+    noiseSuppression: true
+  }
 };
 ```
 
 ---
 
-## 🔧 Environment Setup
+## 📊 Métricas de Llamadas
 
-### Backend .env Variables
-```bash
-# LiveKit Configuration
-LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your_api_key
-LIVEKIT_API_SECRET=your_secret
-```
-
-### Frontend Configuration
+### Estadísticas de Uso
 ```javascript
-// In your React Native app
-const LIVEKIT_URL = 'wss://your-project.livekit.cloud';
-const API_BASE_URL = 'http://your-backend.com';
-```
-
----
-
-## 🎯 Call Flow Examples
-
-### 1:1 Direct Call Flow
-```javascript
-// User A starts call
-const { call, token } = await startCall('direct', userB.id);
-
-// System sends chat invitation to User B
-// User B sees notification in chat
-
-// User B joins call
-const { call, token } = await joinCall(call.id);
-
-// Both users connected to LiveKit room
-// Real-time video/audio communication begins
-
-// When either user leaves, call ends automatically
-```
-
-### Project Group Call Flow
-```javascript
-// Team lead starts project call
-const { call, token } = await startCall('project', project.id);
-
-// System broadcasts invitation to all project members
-// Multiple team members join
-
-// All participants in same LiveKit room
-// Multi-party video conference
-
-// Call continues until last person leaves
-```
-
----
-
-## 📊 Call States
-
-### Call Status
-- `waiting` - Call created, waiting for participants
-- `active` - Call in progress with participants
-- `ended` - Call finished normally
-- `cancelled` - Call cancelled before anyone joined
-
-### Participant State
-- `isConnected` - Currently in the call
-- `micMuted` - Microphone muted
-- `videoMuted` - Camera off
-- `joinedAt` - When they joined
-- `leftAt` - When they left
-
----
-
-## 🔒 Security & Permissions
-
-### Direct Calls
-- Only initiator and recipient can join
-- Any participant can leave anytime  
-- **Call automatically ends when last person leaves**
-
-### Project Calls
-- Only project members can join
-- Any member can leave anytime
-- **Call automatically ends when last person leaves**
-
-### LiveKit Tokens
-- Short-lived JWT tokens (default: 1 hour)
-- Scoped to specific rooms
-- Automatically expire for security
-
----
-
-## 🚀 Advanced Features
-
-### Recording Calls
-```http
-POST /calls/start
-{
-  "type": "direct",
-  "recipientId": "user-uuid",
-  "recordCall": true
-}
-```
-
-### Audio-Only Calls ✨
-**NEW: Different invitation messages for audio vs video!**
-
-```http
-POST /calls/start
-{
-  "type": "direct", 
-  "recipientId": "user-uuid",
-  "audioOnly": true
-}
-```
-
-**Chat Message Sent:** `📞 Victor Fonseca ha iniciado una llamada`
-
-```http
-POST /calls/start
-{
-  "type": "project",
-  "projectId": "project-uuid", 
-  "audioOnly": true
-}
-```
-
-**Chat Message Sent:** `📞 Victor Fonseca ha iniciado una llamada de audio`
-
-### Video Calls (Default)
-```http
-POST /calls/start
-{
-  "type": "direct", 
-  "recipientId": "user-uuid",
-  "audioOnly": false
-}
-```
-
-**Chat Message Sent:** `📞 Victor Fonseca ha iniciado una videollamada`
-
-```http
-POST /calls/start
-{
-  "type": "project",
-  "projectId": "project-uuid", 
-  "audioOnly": false
-}
-```
-
-**Chat Message Sent:** `📞 Victor Fonseca ha iniciado una videollamada`
-
-### Limited Participants
-```http
-POST /calls/start
-{
-  "type": "project",
-  "projectId": "project-uuid",
-  "maxParticipants": 5
-}
-```
-
----
-
-## 🔄 WebHooks (Automatic)
-
-LiveKit automatically sends webhooks to `/calls/webhook/livekit` for:
-- Participant joined/left events
-- Room creation/destruction
-- Automatic state synchronization
-
----
-
-## ✅ Testing
-
-### Test Direct Call
-1. Create two user accounts
-2. Start call from User A to User B
-3. Check chat for invitation message
-4. Join call as User B
-5. Verify both users in LiveKit room
-6. **NEW**: Verify proper names show in UI (not UUIDs)
-
-### Test Project Call  
-1. Create project with multiple members
-2. Start project call
-3. Check all members receive chat notification
-4. Multiple users join call
-5. Verify group video conference
-6. **NEW**: Verify all participant names display correctly
-
-### Test Participant Names
-```javascript
-// Debug participant metadata
-participants.forEach(participant => {
-  console.log('=== PARTICIPANT DEBUG ===');
-  console.log('Identity:', participant.identity);        // UUID
-  console.log('Name:', participant.name);               // Display name
-  console.log('Metadata:', participant.metadata);       // JSON string
-  
-  if (participant.metadata) {
-    const metadata = JSON.parse(participant.metadata);
-    console.log('Parsed metadata:', metadata);
-    console.log('Display name:', metadata.displayName); // "John Smith"
-    console.log('Email:', metadata.email);              // User email
-    console.log('User ID:', metadata.userId);           // UUID for tracking
+class CallAnalytics {
+  async getCallStats() {
+    try {
+      const history = await CallService.getCallHistory(1, 100);
+      
+      return {
+        totalCalls: history.length,
+        directCalls: history.filter(call => call.type === 'direct').length,
+        projectCalls: history.filter(call => call.type === 'project').length,
+        averageDuration: this.calculateAverageDuration(history),
+        mostActiveHours: this.getMostActiveHours(history)
+      };
+    } catch (error) {
+      console.error('Error obteniendo estadísticas:', error);
+      return null;
+    }
   }
-});
-```
 
-### Troubleshooting "undefined undefined"
+  calculateAverageDuration(calls) {
+    const completedCalls = calls.filter(call => call.endedAt);
+    if (completedCalls.length === 0) return 0;
+    
+    const totalDuration = completedCalls.reduce((sum, call) => {
+      const duration = new Date(call.endedAt) - new Date(call.createdAt);
+      return sum + duration;
+    }, 0);
+    
+    return totalDuration / completedCalls.length / 1000 / 60; // minutos
+  }
 
-If you see "undefined undefined" in participant names:
-
-1. **Check Backend Logs** - Look for JWT strategy errors
-```bash
-# Check server logs for:
-[CallsService] Initiator user data: id=xxx, nombre="undefined", apellidos="undefined"
-```
-
-2. **JWT Token Issue** - The user data might not be loading properly
-```javascript
-// Frontend: Check your JWT token payload
-const token = await AsyncStorage.getItem('access_token');
-const payload = JSON.parse(atob(token.split('.')[1]));
-console.log('JWT payload:', payload); // Should have id and email
-```
-
-3. **Re-login** - If JWT is corrupted, have user login again
-```javascript
-// Clear token and re-authenticate
-await AsyncStorage.removeItem('access_token');
-// Navigate to login screen
-```
-
-4. **Fixed in Latest Version** ✅
-   - JWT strategy now loads full user data from database
-   - Includes proper fallbacks for missing fields
-   - Debug logging added for troubleshooting
-
----
-
-**🎉 Your video calling system is COMPLETE and PRODUCTION-READY!**
-
-With LiveKit integration, you get:
-- ✅ **Enterprise-grade video quality**
-- ✅ **Automatic scaling** 
-- ✅ **Global edge servers**
-- ✅ **Real-time communication**
-- ✅ **Cross-platform support**
-
-**Perfect for team collaboration!** 🚀💪 
-
-## 🚀 Improved Call Management
-
-### **New: Democratic Call Control** ✨
-- ❌ **No more "End for Everyone" button** - Removed initiator privileges
-- ✅ **Everyone uses "Leave Call"** - Single, consistent action
-- ✅ **Auto-end when empty** - Call ends when last person leaves
-- ✅ **Better UX** - No confusion between "leave" vs "end"
-- ✅ **Fairer system** - No one can kick others out
-
-### Leave Call Flow
-```javascript
-// Any participant can leave
-await leaveCall(callId);
-
-// Backend checks remaining participants
-// If last person → Call marked as 'ended'
-// If others remain → Call continues
+  getMostActiveHours(calls) {
+    const hourCounts = {};
+    
+    calls.forEach(call => {
+      const hour = new Date(call.createdAt).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    
+    return Object.entries(hourCounts)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([hour, count]) => ({ hour: parseInt(hour), count }));
+  }
+}
 ``` 

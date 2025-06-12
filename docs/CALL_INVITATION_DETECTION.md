@@ -1,28 +1,28 @@
-# Call Invitation Detection System 📞
+# Sistema de Detección de Invitaciones de Llamada 📞
 
-## Overview
-This document explains how the mobile app detects, handles, and processes call invitations in the chat system. The web frontend can use this as a reference to implement the same functionality.
+## Resumen
+Este documento explica cómo la aplicación móvil detecta, maneja y procesa invitaciones de llamada en el sistema de chat. El frontend web puede usar esto como referencia para implementar la misma funcionalidad.
 
 ---
 
-## 🔍 Detection Process
+## 🔍 Proceso de Detección
 
-### 1. Message Reception
-Call invitations are detected through the WebSocket chat system when new messages arrive:
+### 1. Recepción de Mensajes
+Las invitaciones de llamada se detectan a través del sistema de chat WebSocket cuando llegan nuevos mensajes:
 
 ```javascript
-// Listen for incoming messages via WebSocket
+// Escuchar mensajes entrantes vía WebSocket
 socket.on('newMessage', (message) => {
-  // Check if this message is a call invitation
+  // Verificar si este mensaje es una invitación de llamada
   if (isCallInvitation(message.content) && message.senderId !== currentUserId) {
-    // Process the call invitation
+    // Procesar la invitación de llamada
     handleCallInvitation(message);
   }
 });
 ```
 
-### 2. Call Invitation Detection Function
-The core detection logic uses a simple pattern matching approach:
+### 2. Función de Detección de Invitación de Llamada
+La lógica de detección principal usa un enfoque simple de coincidencia de patrones:
 
 ```javascript
 const isCallInvitation = (messageContent: string): boolean => {
@@ -32,64 +32,64 @@ const isCallInvitation = (messageContent: string): boolean => {
 };
 ```
 
-**Detection Criteria:**
-- Contains the 📞 emoji (primary indicator)
-- Contains the word "call" (case-insensitive)
-- Contains the word "meeting" (case-insensitive)
+**Criterios de Detección:**
+- Contiene el emoji 📞 (indicador principal)
+- Contiene la palabra "call" (insensible a mayúsculas)
+- Contiene la palabra "meeting" (insensible a mayúsculas)
 
 ---
 
-## 📋 Message Structure
+## 📋 Estructura del Mensaje
 
-### Call Invitation Message Format
-When a call is started, the backend automatically sends a chat message with this structure:
+### Formato del Mensaje de Invitación de Llamada
+Cuando se inicia una llamada, el backend envía automáticamente un mensaje de chat con esta estructura:
 
 ```typescript
 interface Message {
   id: string;
-  content: string;          // The invitation text
-  senderId: string;         // User who started the call
-  senderName: string;       // Display name of caller
-  callId?: string;          // UUID of the call (key for joining)
+  content: string;          // El texto de invitación
+  senderId: string;         // Usuario que inició la llamada
+  senderName: string;       // Nombre para mostrar del llamador
+  callId?: string;          // UUID de la llamada (clave para unirse)
   createdAt: string;
   type: 'direct' | 'project';
-  recipientId?: string;     // For direct calls
-  projectId?: string;       // For project calls
+  recipientId?: string;     // Para llamadas directas
+  projectId?: string;       // Para llamadas de proyecto
   isRead: boolean;
 }
 ```
 
-### Content Examples
-The backend generates different messages based on call type:
+### Ejemplos de Contenido
+El backend genera diferentes mensajes basados en el tipo de llamada:
 
-**Direct Audio Call:**
+**Llamada de Audio Directa:**
 ```
 📞 Victor Fonseca ha iniciado una llamada
 ```
 
-**Direct Video Call:**
+**Llamada de Video Directa:**
 ```
 📞 Victor Fonseca ha iniciado una videollamada
 ```
 
-**Project Audio Call:**
+**Llamada de Audio de Proyecto:**
 ```
 📞 Victor Fonseca ha iniciado una llamada de audio
 ```
 
-**Project Video Call:**
+**Llamada de Video de Proyecto:**
 ```
 📞 Victor Fonseca ha iniciado una videollamada
 ```
 
 ---
 
-## 🎯 Backend Endpoints Used
+## 🎯 Endpoints del Backend Utilizados
 
-### 1. Starting a Call
-When a user starts a call, these endpoints are called:
+### 1. Iniciar una Llamada
+Cuando un usuario inicia una llamada, se llaman estos endpoints:
 
-**Direct Call:**
+**Llamada Directa:**
 ```http
 POST /calls/start
 Authorization: Bearer <jwt-token>
@@ -103,7 +103,7 @@ Content-Type: application/json
 }
 ```
 
-**Project Call:**
+**Llamada de Proyecto:**
 ```http
 POST /calls/start
 Authorization: Bearer <jwt-token>
@@ -118,7 +118,7 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
+**Respuesta:**
 ```json
 {
   "call": {
@@ -144,8 +144,8 @@ Content-Type: application/json
 }
 ```
 
-### 2. Join Call Status Check
-Before joining a call, check if it's still active:
+### 2. Verificación de Estado para Unirse a Llamada
+Antes de unirse a una llamada, verificar si aún está activa:
 
 ```http
 POST /calls/join/{callId}
@@ -157,52 +157,52 @@ Content-Type: application/json
 }
 ```
 
-**Success Response (200):**
+**Respuesta Exitosa (200):**
 ```json
 {
   "call": {
     "id": "call-uuid",
     "status": "active",
     "audioOnly": false,
-    // ... other call details
+    // ... otros detalles de la llamada
   },
   "token": "livekit-access-token"
 }
 ```
 
-**Error Responses:**
-- `404`: Call not found or ended
-- `400`: Call cancelled or invalid
+**Respuestas de Error:**
+- `404`: Llamada no encontrada o terminada
+- `400`: Llamada cancelada o inválida
 
 ---
 
-## 🔧 Call ID Extraction
+## 🔧 Extracción del ID de Llamada
 
-### Primary Method: Message Metadata
-The preferred method is using the `callId` field in the message:
+### Método Principal: Metadatos del Mensaje
+El método preferido es usar el campo `callId` en el mensaje:
 
 ```javascript
-// Check if message has callId in metadata
+// Verificar si el mensaje tiene callId en metadatos
 if (message.callId) {
-  console.log('Found call ID in metadata:', message.callId);
+  console.log('ID de llamada encontrado en metadatos:', message.callId);
   joinCall(message.callId);
 }
 ```
 
-### Fallback Method: Text Parsing
-If metadata is missing, extract the call ID from the message content:
+### Método de Respaldo: Análisis de Texto
+Si faltan los metadatos, extraer el ID de llamada del contenido del mensaje:
 
 ```javascript
 const extractCallId = (messageContent: string): string | null => {
-  // Multiple UUID patterns to try
+  // Múltiples patrones UUID para probar
   const patterns = [
-    // Standard UUID pattern
+    // Patrón UUID estándar
     /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
-    // callId: pattern
+    // Patrón callId:
     /callId[:\s]*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi,
-    // call/ pattern (from URLs)
+    // Patrón call/ (de URLs)
     /call\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/gi,
-    // Any UUID-like pattern
+    // Cualquier patrón similar a UUID
     /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi
   ];
   
@@ -219,10 +219,10 @@ const extractCallId = (messageContent: string): string | null => {
 
 ---
 
-## 🎨 UI Handling
+## 🎨 Manejo de UI
 
-### 1. Real-time Alert
-When a call invitation is detected, show an immediate alert:
+### 1. Alerta en Tiempo Real
+Cuando se detecta una invitación de llamada, mostrar una alerta inmediata:
 
 ```javascript
 if (isCallInvitation(message.content) && message.senderId !== currentUserId) {
@@ -244,8 +244,8 @@ if (isCallInvitation(message.content) && message.senderId !== currentUserId) {
 }
 ```
 
-### 2. Chat Message Rendering
-Call invitation messages are rendered with special UI:
+### 2. Renderizado de Mensajes de Chat
+Los mensajes de invitación de llamada se renderizan con UI especial:
 
 ```javascript
 const renderCallInvitation = (message) => {
@@ -255,7 +255,7 @@ const renderCallInvitation = (message) => {
   
   return (
     <View style={styles.callInvitationCard}>
-      {/* Call Header */}
+      {/* Encabezado de Llamada */}
       <View style={styles.callInvitationHeader}>
         <View style={[styles.callIconContainer, { 
           backgroundColor: isCallActive ? '#4CAF50' : '#9E9E9E' 
@@ -272,7 +272,7 @@ const renderCallInvitation = (message) => {
         </View>
       </View>
       
-      {/* Join Button */}
+      {/* Botón de Unirse */}
       {isCallActive && (
         <TouchableOpacity 
           style={styles.joinCallButton}
@@ -288,15 +288,15 @@ const renderCallInvitation = (message) => {
 
 ---
 
-## 🚀 Joining Call Process
+## 🚀 Proceso de Unirse a Llamada
 
-### 1. Validate Call Status
-Before joining, always check if the call is still active:
+### 1. Validar Estado de Llamada
+Antes de unirse, siempre verificar si la llamada aún está activa:
 
 ```javascript
 const joinCallFromInvitation = async (callId) => {
   try {
-    // Check call status
+    // Verificar estado de llamada
     const response = await fetch(`${API_BASE_URL}/calls/join/${callId}`, {
       method: 'POST',
       headers: await getAuthHeaders(),
@@ -307,44 +307,44 @@ const joinCallFromInvitation = async (callId) => {
       const { call, token } = await response.json();
       
       if (call.status === 'active') {
-        // Navigate to call screen
+        // Navegar a pantalla de llamada
         router.push(`/call/${callId}`);
       } else {
-        // Call ended or cancelled
-        showAlert('Call Unavailable', 'This call has ended.');
+        // Llamada terminada o cancelada
+        showAlert('Llamada No Disponible', 'Esta llamada ha terminado.');
       }
     } else {
-      // Handle error status codes
+      // Manejar códigos de estado de error
       if (response.status === 404 || response.status === 400) {
-        showAlert('Call Unavailable', 'This call has ended or is no longer available.');
+        showAlert('Llamada No Disponible', 'Esta llamada ha terminado o ya no está disponible.');
       }
     }
   } catch (error) {
-    showAlert('Connection Error', 'Unable to check call status.');
+    showAlert('Error de Conexión', 'No se pudo verificar el estado de la llamada.');
   }
 };
 ```
 
-### 2. Navigation to Call Screen
-Once validated, navigate to the video call interface:
+### 2. Navegación a Pantalla de Llamada
+Una vez validada, navegar a la interfaz de videollamada:
 
 ```javascript
-// Navigate with call ID
+// Navegar con ID de llamada
 router.push(`/call/${callId}`);
 ```
 
 ---
 
-## 🔄 Call Status Monitoring
+## 🔄 Monitoreo de Estado de Llamada
 
-### Status Caching
-To avoid repeated API calls, cache call statuses:
+### Caché de Estados
+Para evitar llamadas repetidas a la API, cachear estados de llamada:
 
 ```javascript
 const [callStatuses, setCallStatuses] = useState({});
 
 const checkCallStatus = async (callId) => {
-  // Return cached status if available
+  // Devolver estado cacheado si está disponible
   if (callStatuses[callId]) {
     return callStatuses[callId];
   }
@@ -371,17 +371,17 @@ const checkCallStatus = async (callId) => {
 };
 ```
 
-### Status Types
-- `waiting`: Call created, waiting for participants
-- `active`: Call in progress with participants  
-- `ended`: Call finished normally
-- `cancelled`: Call cancelled before anyone joined
+### Tipos de Estado
+- `waiting`: Llamada creada, esperando participantes
+- `active`: Llamada en progreso con participantes  
+- `ended`: Llamada terminada normalmente
+- `cancelled`: Llamada cancelada antes de que alguien se uniera
 
 ---
 
-## 📱 Web Frontend Implementation
+## 📱 Implementación del Frontend Web
 
-### 1. WebSocket Connection
+### 1. Conexión WebSocket
 ```javascript
 import io from 'socket.io-client';
 
@@ -398,7 +398,7 @@ socket.on('newMessage', (message) => {
 });
 ```
 
-### 2. Call Detection
+### 2. Detección de Llamada
 ```javascript
 const isCallInvitation = (messageContent) => {
   return messageContent.includes('📞') || 
@@ -407,24 +407,24 @@ const isCallInvitation = (messageContent) => {
 };
 ```
 
-### 3. Browser Notification
+### 3. Notificación del Navegador
 ```javascript
 const handleCallInvitation = (message) => {
-  // Show browser notification
+  // Mostrar notificación del navegador
   if (Notification.permission === 'granted') {
-    new Notification('Incoming Call', {
+    new Notification('Llamada Entrante', {
       body: message.content,
       icon: '/call-icon.png',
       tag: 'call-invitation'
     });
   }
   
-  // Show in-app modal
+  // Mostrar modal en la aplicación
   showCallInvitationModal(message);
 };
 ```
 
-### 4. Call Joining
+### 4. Unirse a Llamada
 ```javascript
 const joinCall = async (callId) => {
   try {
@@ -440,48 +440,48 @@ const joinCall = async (callId) => {
     if (response.ok) {
       const { call, token: livekitToken } = await response.json();
       
-      // Use LiveKit Web SDK to join the room
+      // Usar LiveKit Web SDK para unirse a la sala
       const room = new Room();
       await room.connect('wss://your-livekit-url', livekitToken);
       
-      // Navigate to call interface
+      // Navegar a interfaz de llamada
       window.location.href = `/call/${callId}`;
     }
   } catch (error) {
-    console.error('Failed to join call:', error);
+    console.error('Error al unirse a la llamada:', error);
   }
 };
 ```
 
 ---
 
-## 🎨 UI/UX Styling
+## 🎨 Estilos UI/UX
 
-### Call Invitation Card Colors
+### Colores de Tarjeta de Invitación de Llamada
 ```css
 .call-invitation-card {
   background-color: #f8f9fa;
-  border: 2px solid #4CAF50; /* Green for active calls */
+  border: 2px solid #4CAF50; /* Verde para llamadas activas */
   border-radius: 16px;
   padding: 16px;
 }
 
 .call-invitation-card.ended {
-  border-color: #9E9E9E; /* Gray for ended calls */
+  border-color: #9E9E9E; /* Gris para llamadas terminadas */
 }
 
 .call-icon-container {
   width: 40px;
   height: 40px;
   border-radius: 20px;
-  background-color: #4CAF50; /* Green for active */
+  background-color: #4CAF50; /* Verde para activas */
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .call-icon-container.ended {
-  background-color: #9E9E9E; /* Gray for ended */
+  background-color: #9E9E9E; /* Gris para terminadas */
 }
 
 .join-call-button {
@@ -502,11 +502,11 @@ const joinCall = async (callId) => {
 
 ---
 
-## 🔧 Testing
+## 🔧 Pruebas
 
-### 1. Test Call Invitation Detection
+### 1. Probar Detección de Invitación de Llamada
 ```javascript
-// Test message examples
+// Ejemplos de mensajes de prueba
 const testMessages = [
   { content: '📞 Victor Fonseca ha iniciado una llamada', callId: 'test-call-id' },
   { content: '📞 Victor Fonseca ha iniciado una videollamada', callId: 'test-call-id' },
@@ -515,30 +515,30 @@ const testMessages = [
 ];
 
 testMessages.forEach(msg => {
-  console.log(`"${msg.content}" is call invitation:`, isCallInvitation(msg.content));
+  console.log(`"${msg.content}" es invitación de llamada:`, isCallInvitation(msg.content));
 });
 ```
 
-### 2. Test Call ID Extraction
+### 2. Probar Extracción de ID de Llamada
 ```javascript
 const testContent = 'Join call: https://app.com/call/123e4567-e89b-12d3-a456-426614174000';
 const extractedId = extractCallId(testContent);
-console.log('Extracted ID:', extractedId); // Should be: 123e4567-e89b-12d3-a456-426614174000
+console.log('ID Extraído:', extractedId); // Debería ser: 123e4567-e89b-12d3-a456-426614174000
 ```
 
 ---
 
-## 🎯 Key Points for Web Frontend
+## 🎯 Puntos Clave para Frontend Web
 
-1. **Listen for WebSocket messages** with call invitation patterns
-2. **Check message.callId first**, fallback to text extraction
-3. **Always validate call status** before joining
-4. **Cache call statuses** to avoid repeated API calls
-5. **Show immediate notifications** for incoming calls
-6. **Use proper error handling** for network issues
-7. **Implement proper UI states** (active, ended, loading)
-8. **Support both audio and video** call types
-9. **Handle direct and project** call contexts
-10. **Provide clear user feedback** throughout the process
+1. **Escuchar mensajes WebSocket** con patrones de invitación de llamada
+2. **Verificar message.callId primero**, usar extracción de texto como respaldo
+3. **Siempre validar estado de llamada** antes de unirse
+4. **Cachear estados de llamada** para evitar llamadas repetidas a la API
+5. **Mostrar notificaciones inmediatas** para llamadas entrantes
+6. **Usar manejo de errores apropiado** para problemas de red
+7. **Implementar estados de UI apropiados** (activa, terminada, cargando)
+8. **Soportar tipos de llamada de audio y video**
+9. **Manejar contextos de llamada directa y de proyecto**
+10. **Proporcionar retroalimentación clara al usuario** durante todo el proceso
 
-The system prioritizes reliability and user experience by using multiple detection methods, proper error handling, and clear visual feedback. 
+El sistema prioriza la confiabilidad y experiencia del usuario usando múltiples métodos de detección, manejo apropiado de errores y retroalimentación visual clara. 

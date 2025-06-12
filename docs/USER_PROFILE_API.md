@@ -1,31 +1,31 @@
-# User Profile API Documentation 👤
+# Documentación de API de Perfil de Usuario 👤
 
-Complete user profile system with comprehensive statistics and activity tracking.
+Sistema completo de perfil de usuario con estadísticas integrales y seguimiento de actividad.
 
-## **Endpoints Overview**
+## **Resumen de Endpoints**
 
-### **🔍 Profile Endpoints**
-| Method | Endpoint | Description | Auth |
+### **🔍 Endpoints de Perfil**
+| Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
-| `GET` | `/auth/me/profile` | Get current user's comprehensive profile | ✅ JWT |
-| `GET` | `/users/:userId/profile` | Get any user's comprehensive profile | ✅ JWT |
+| `GET` | `/auth/me/profile` | Obtener perfil integral del usuario actual | ✅ JWT |
+| `GET` | `/users/:userId/profile` | Obtener perfil integral de cualquier usuario | ✅ JWT |
 
 ---
 
 ## **📊 GET `/auth/me/profile`**
 
-Get the comprehensive profile of the authenticated user.
+Obtener el perfil integral del usuario autenticado.
 
-### **Request**
+### **Solicitud**
 ```http
 GET /auth/me/profile
 Authorization: Bearer <jwt_token>
 ```
 
-### **Response Structure**
+### **Estructura de Respuesta**
 ```typescript
 {
-  // Basic User Information
+  // Información Básica del Usuario
   id: string;
   email: string;
   nombre: string;
@@ -35,27 +35,27 @@ Authorization: Bearer <jwt_token>
   memberSince: Date;
   lastActive: Date;
   
-  // Comprehensive Statistics
+  // Estadísticas Integrales
   stats: {
-    // Project Involvement
+    // Participación en Proyectos
     totalProjects: number;
     ownerProjects: number;
     adminProjects: number;
     memberProjects: number;
     
-    // Task Performance
+    // Rendimiento en Tareas
     tasksCreated: number;
     tasksAssigned: number;
     tasksCompleted: number;
     tasksPending: number;
     tasksInProgress: number;
-    completionRate: number; // percentage (0-100)
+    completionRate: number; // porcentaje (0-100)
     
-    // Communication Activity
+    // Actividad de Comunicación
     messagesSent: number;
     directConversations: number;
     
-    // Call Engagement
+    // Participación en Llamadas
     callsParticipated: number;
     callsInitiated: number;
     
@@ -64,21 +64,21 @@ Authorization: Bearer <jwt_token>
     invitationsReceived: number;
     invitationsAccepted: number;
     invitationsPending: number;
-    invitationAcceptanceRate: number; // percentage (0-100)
+    invitationAcceptanceRate: number; // porcentaje (0-100)
   };
   
-  // Recent Activity Timeline (last 15 activities)
+  // Cronología de Actividad Reciente (últimas 15 actividades)
   recentActivity: Array<{
     type: 'task' | 'message' | 'call';
     action: string; // 'created', 'assigned', 'sent', 'initiated', 'joined'
     title: string;
     project?: string;
-    recipient?: string; // for messages
+    recipient?: string; // para mensajes
     timestamp: Date;
-    status?: string; // for tasks
+    status?: string; // para tareas
   }>;
   
-  // Most Active Projects (top 5)
+  // Proyectos Más Activos (top 5)
   projects: Array<{
     id: string;
     name: string;
@@ -87,18 +87,18 @@ Authorization: Bearer <jwt_token>
     messageCount: number;
   }>;
   
-  // AI-Generated Insights
+  // Insights Generados por IA
   insights: {
     mostActiveProject: string | null;
     averageTasksPerProject: number;
     peakActivityType: 'communication' | 'task_management';
     collaborationScore: number; // 0-100
-    leadershipScore: number; // calculated score
+    leadershipScore: number; // puntuación calculada
   };
 }
 ```
 
-### **Example Response**
+### **Ejemplo de Respuesta**
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -140,7 +140,7 @@ Authorization: Bearer <jwt_token>
     {
       "type": "task",
       "action": "created",
-      "title": "Implement user authentication",
+      "title": "Implementar autenticación de usuario",
       "project": "Axon Backend",
       "timestamp": "2024-12-20T13:45:00Z",
       "status": "in_progress"
@@ -148,7 +148,7 @@ Authorization: Bearer <jwt_token>
     {
       "type": "message",
       "action": "sent",
-      "title": "Hey, can you review the profile endpoint?",
+      "title": "Oye, ¿puedes revisar el endpoint de perfil?",
       "project": "Axon Backend",
       "recipient": "Ana García",
       "timestamp": "2024-12-20T12:30:00Z"
@@ -193,135 +193,185 @@ Authorization: Bearer <jwt_token>
 
 ## **👥 GET `/users/:userId/profile`**
 
-Get the comprehensive profile of any user (same structure as `/auth/me/profile`).
+Obtener el perfil integral de cualquier usuario (misma estructura que `/auth/me/profile`).
 
-### **Request**
+### **Solicitud**
 ```http
 GET /users/550e8400-e29b-41d4-a716-446655440000/profile
 Authorization: Bearer <jwt_token>
 ```
 
-### **Path Parameters**
-- `userId` (UUID) - The ID of the user whose profile to retrieve
+### **Parámetros de Ruta**
+- `userId` (UUID) - El ID del usuario cuyo perfil se desea obtener
 
-### **Response**
-Same structure as `/auth/me/profile` but for the specified user.
+### **Respuesta**
+Misma estructura que `/auth/me/profile` pero para el usuario especificado.
 
 ---
 
-## **📈 Data Insights Explained**
+## **📈 Explicación de Data Insights**
 
-### **Completion Rate**
+### **Tasa de Finalización**
 ```
 completionRate = (tasksCompleted / tasksAssigned) * 100
 ```
 
-### **Collaboration Score**
+### **Puntuación de Colaboración**
 ```
 collaborationScore = min(100, directConversations * 5 + callsParticipated * 10)
 ```
 
-### **Leadership Score**
+### **Puntuación de Liderazgo**
 ```
 leadershipScore = ownerProjects * 20 + adminProjects * 10 + invitationsSent * 2
 ```
 
-### **Peak Activity Type**
-- `communication` - if messagesSent > tasksCreated
-- `task_management` - if tasksCreated >= messagesSent
+### **Tipo de Actividad Pico**
+- `communication` - si messagesSent > tasksCreated
+- `task_management` - si tasksCreated >= messagesSent
 
 ---
 
-## **🔄 Real-time Data**
+## **🔄 Datos en Tiempo Real**
 
-All statistics are calculated in real-time from the database:
-- **Project data** from `ProjectMember` relationships
-- **Task statistics** from `Task` entities with user associations
-- **Message counts** from `Message` entities
-- **Call participation** from `CallParticipant` entities
-- **Invitation data** from `ProjectInvitation` entities
+Todas las estadísticas se calculan en tiempo real desde la base de datos:
+- **Datos de proyecto** de las relaciones `ProjectMember`
+- **Estadísticas de tareas** de las entidades `Task` con asociaciones de usuario
+- **Conteos de mensajes** de las entidades `Message`
+- **Participación en llamadas** de las entidades `CallParticipant`
+- **Datos de invitación** de las entidades `ProjectInvitation`
 
 ---
 
-## **⚡ Performance**
+## **⚡ Rendimiento**
 
-- Uses **parallel queries** with `Promise.all()` for optimal performance
-- **Indexes recommended** on frequently queried fields:
+- Utiliza **consultas paralelas** con `Promise.all()` para rendimiento óptimo
+- **Índices recomendados** en campos consultados frecuentemente:
   - `tasks.createdBy`
-  - `tasks.assignees`
-  - `messages.sender`
-  - `call_participants.user`
-  - `project_invitations.invitedUser`
+  - `tasks.assignedTo`
+  - `messages.senderId`
+  - `callParticipants.userId`
+  - `projectInvitations.invitedUserId`
 
 ---
 
-## **🚨 Error Responses**
+## **❌ Códigos de Error**
 
-### **User Not Found (404)**
-```json
-{
-  "statusCode": 404,
-  "message": "user-not-found",
-  "error": "Not Found"
-}
-```
-
-### **Invalid User ID (400)**
-```json
-{
-  "statusCode": 400,
-  "message": "invalid-user-id",
-  "error": "Bad Request"
-}
-```
-
-### **Unauthorized (401)**
-```json
-{
-  "statusCode": 401,
-  "message": "Unauthorized"
-}
-```
+| Código | Mensaje | Descripción |
+|--------|---------|-------------|
+| `401` | `unauthorized` | Token JWT inválido o expirado |
+| `404` | `user-not-found` | Usuario no encontrado (solo para `/users/:userId/profile`) |
+| `403` | `access-denied` | Sin permisos para ver este perfil |
+| `500` | `server-error` | Error interno del servidor |
 
 ---
 
-## **💡 Usage Examples**
+## **🔐 Permisos de Acceso**
 
-### **Frontend Profile Dashboard**
+### **Perfil Propio (`/auth/me/profile`)**
+- ✅ Acceso completo a todas las estadísticas e insights
+- ✅ Datos de actividad detallados
+- ✅ Información de todos los proyectos
+
+### **Perfil de Otros (`/users/:userId/profile`)**
+- ✅ Información básica del usuario
+- ✅ Estadísticas de proyectos compartidos únicamente
+- ❌ Datos de actividad limitados
+- ❌ Sin información de invitaciones privadas
+
+---
+
+## **📱 Uso en Frontend**
+
+### **Ejemplo de Implementación**
 ```typescript
-const { data: profile } = await api.get('/auth/me/profile');
+// Obtener perfil del usuario actual
+const getUserProfile = async () => {
+  try {
+    const response = await fetch('/auth/me/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Error al obtener perfil');
+    }
+    
+    const profile = await response.json();
+    return profile;
+  } catch (error) {
+    console.error('Error de perfil:', error);
+    throw error;
+  }
+};
 
-// Display quick stats
-console.log(`${profile.stats.completionRate}% task completion rate`);
-console.log(`Active in ${profile.stats.totalProjects} projects`);
-console.log(`${profile.stats.messagesSent} messages sent`);
-
-// Show recent activity
-profile.recentActivity.forEach(activity => {
-  console.log(`${activity.action} ${activity.type}: ${activity.title}`);
-});
+// Obtener perfil de otro usuario
+const getOtherUserProfile = async (userId: string) => {
+  try {
+    const response = await fetch(`/users/${userId}/profile`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error('Usuario no encontrado');
+      }
+      if (response.status === 403) {
+        throw new Error('Sin permisos para ver este perfil');
+      }
+      throw new Error('Error al obtener perfil');
+    }
+    
+    const profile = await response.json();
+    return profile;
+  } catch (error) {
+    console.error('Error de perfil:', error);
+    throw error;
+  }
+};
 ```
 
-### **Team Member Lookup**
+---
+
+## **📊 Casos de Uso Comunes**
+
+### **1. Dashboard de Usuario**
 ```typescript
-const { data: memberProfile } = await api.get(`/users/${memberId}/profile`);
+const profile = await getUserProfile();
+const {
+  stats: { completionRate, totalProjects, tasksCompleted },
+  insights: { collaborationScore, mostActiveProject }
+} = profile;
 
-// Compare performance
-if (memberProfile.stats.completionRate > 90) {
-  console.log('High performer! 🌟');
-}
+// Mostrar métricas clave en el dashboard
 ```
 
----
+### **2. Perfil de Equipo**
+```typescript
+const teamProfiles = await Promise.all(
+  teamMembers.map(member => getOtherUserProfile(member.id))
+);
 
-## **🔮 Future Enhancements**
+// Comparar estadísticas del equipo
+const teamStats = teamProfiles.map(profile => ({
+  name: profile.fullName,
+  completionRate: profile.stats.completionRate,
+  collaborationScore: profile.insights.collaborationScore
+}));
+```
 
-- **Time-based filtering** (last 30 days, quarter, etc.)
-- **Project-specific statistics** (`/users/:id/profile/projects/:projectId`)
-- **Team comparisons** and rankings
-- **Activity heatmaps** and trends
-- **Custom date ranges** for statistics
-
----
-
-*This endpoint provides rich, actionable data for user profiles, team management, and performance analytics.* 📊✨ 
+### **3. Análisis de Rendimiento**
+```typescript
+const profile = await getUserProfile();
+const performanceMetrics = {
+  productivity: profile.stats.completionRate,
+  collaboration: profile.insights.collaborationScore,
+  leadership: profile.insights.leadershipScore,
+  engagement: profile.stats.callsParticipated + profile.stats.messagesSent
+};
+``` 
