@@ -292,11 +292,6 @@ const socket = io('your-backend-url', {
 - [ ] **Grabación de reuniones**
 - [ ] **Integración con calendarios** externos
 
-### Planificado
-- [ ] **Aplicación web** (React)
-- [ ] **Aplicación de escritorio** (Electron)
-- [ ] **API pública** para integraciones
-- [ ] **Plugins y extensiones**
 
 ## 👥 Contribución
 
@@ -311,18 +306,7 @@ Este proyecto es parte de un Trabajo de Fin de Grado desarrollado por:
 4. **Push** a la rama (`git push origin feature/nueva-caracteristica`)
 5. **Crear Pull Request**
 
-## 📄 Licencia
-
-Este proyecto es parte de un Trabajo de Fin de Grado y está sujeto a las políticas académicas correspondientes.
-
-## 📞 Soporte y Contacto
-
-Para soporte técnico o consultas sobre el proyecto:
-- **Documentación:** Revisar archivos en `/docs`
-- **Issues:** Crear issue en el repositorio
-- **Email:** Contactar a los desarrolladores
-
 ---
 
-**Desarrollado con ❤️ por Victor Fonseca y Ranzes Mata**  
-*Trabajo de Fin de Grado - Universidad [Nombre de la Universidad]*
+**Desarrollado por Victor Fonseca y Ranzes Mata**  
+*Trabajo de Fin de Grado*
